@@ -1,0 +1,10 @@
+# Geliştirme sürecine ait notlar/araç çıktıları — repo'ya dahil edilmez
+*.md
+.claude/
+.impeccable/
+.superpowers/
+docs/
+
+# İşletim sistemi / editör
+.DS_Store
+Thumbs.db

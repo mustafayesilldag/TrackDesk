@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>TrackDesk — İş Takip Paneli</title>
+  <meta name="theme-color" content="#1D4ED8">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TrackDesk">
+  <meta name="format-detection" content="telephone=no">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="512x512" href="app-icon-512.png">
+  <link rel="apple-touch-icon" href="app-icon-512.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styless.css?v=12">
+</head>
+<body>
+  <div id="auth-overlay" class="auth-overlay" hidden>
+    <div class="auth-backdrop"></div>
+    <section class="auth-card" aria-labelledby="auth-heading">
+      <p class="eyebrow">Yetkili Girişi</p>
+      <h2 id="auth-heading">Panele Erişim İçin Giriş Yap</h2>
+      <p class="muted">Arka plandaki panel görünür kalır, ancak giriş yapmadan işlem yapılamaz.</p>
+      <form id="auth-form" class="stack">
+        <label>
+          <span>Kullanıcı adı</span>
+          <input id="auth-username" name="username" type="text" autocomplete="username" placeholder="Örnek: admin" required>
+        </label>
+        <label>
+          <span>Şifre</span>
+          <input id="auth-password" name="password" type="password" autocomplete="current-password" placeholder="Şifreni gir" required>
+        </label>
+        <button type="submit" class="primary">Giriş Yap</button>
+      </form>
+      <p id="auth-feedback" class="muted auth-feedback">Kullanmak için giriş yap.</p>
+    </section>
+  </div>
+  <button type="button" class="topbar-handle" id="topbar-handle" aria-label="Üst çubuğu aç veya kapat"><span class="topbar-handle-pill"></span></button>
+  <header class="topbar" id="topbar">
+    <div class="topbar-inner">
+      <span class="topbar-logo" role="heading" aria-level="1">TrackDesk <span class="demo-chip">Demo</span></span>
+      <span id="sync-status" class="sync-status" role="status" hidden><span class="sync-status-dot"></span><span id="sync-status-text"></span></span>
+      <span id="auth-user-badge" class="pill" hidden></span>
+      <button type="button" id="logout-button" class="ghost small-button" hidden>Çıkış Yap</button>
+    </div>
+  </header>
+  <div id="demo-banner" class="demo-banner" role="status">
+    <span class="demo-banner-icon" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    </span>
+    <span class="demo-banner-text">Bu demo modudur — veriler kaydedilmez, sayfa yenilenince sıfırlanır. Özgürce dene.</span>
+    <button type="button" id="dismiss-demo-banner" class="demo-banner-dismiss" aria-label="Kapat">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <div class="app-shell">
+
+    <main class="main-content">
+      <div class="view view-operasyon active" data-view="operasyon">
+      <section class="hero operations-hero">
+        <div class="operations-intro">
+          <p class="eyebrow">Günlük Operasyon</p>
+          <h2>Anlık Sipariş ve Teslimat Merkezi</h2>
+        </div>
+        <div class="operations-grid">
+          <section class="stat-card quick-entry-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Hızlı Ekle</p>
+                <h2>Yeni Günlük İşlem</h2>
+              </div>
+            </div>
+            <form id="quick-transaction-form" class="stack">
+              <div class="two-col">
+                <label>
+                  <span>Müşteri</span>
+                  <div class="quick-customer-picker">
+                    <input id="quick-customer" type="text" placeholder="Müşteri seçmek için dokun" autocomplete="off" readonly required>
+                    <input id="quick-customer-id" type="hidden">
+                    <button type="button" id="open-customer-picker" class="ghost quick-customer-open-button">Listeden Seç</button>
+                  </div>
+                </label>
+                <label>
+                  <span>İşlem tarihi</span>
+                  <input id="quick-date" type="date">
+                </label>
+              </div>
+              <div class="recent-customers-block">
+                <span class="muted recent-title">Son seçilen müşteriler</span>
+                <div id="quick-recent-customers" class="recent-customer-list"></div>
+              </div>
+              <fieldset class="product-picker">
+                <legend>Ürün Seçimi</legend>
+                <div class="section-head compact">
+                  <button type="button" id="quick-add-product-row" class="ghost small-button">Satır Ekle</button>
+                </div>
+                <div id="quick-product-rows" class="product-row-list"></div>
+              </fieldset>
+              <label>
+                <span>Toplam fiyat (TL)</span>
+                <input id="quick-amount" type="number" min="0" step="0.01" placeholder="0" required readonly>
+                <p class="section-hint">Ürün satırlarından otomatik hesaplanır.</p>
+              </label>
+
+              <details class="quick-advanced-options">
+                <summary>Gelişmiş seçenekler <span class="muted">— ödeme planı, peşinat, not</span></summary>
+                <div class="stack">
+                  <div class="two-col">
+                    <label>
+                      <span>Ödeme planı</span>
+                      <select id="quick-payment-plan">
+                        <option value="0">Peşin / normal takip</option>
+                        <option value="15">15 gün vadeli ödeme</option>
+                      </select>
+                    </label>
+                    <label>
+                      <span>Ödeme tarihi</span>
+                      <input id="quick-due-date" type="date">
+                    </label>
+                  </div>
+                  <div class="two-col">
+                    <label>
+                      <span>Peşinat (TL)</span>
+                      <input id="quick-paid" type="number" min="0" step="0.01" placeholder="0" value="0">
+                    </label>
+                    <label>
+                      <span>Kısa not</span>
+                      <input id="quick-note" type="text" placeholder="Örnek: Telefonla sipariş geldi">
+                    </label>
+                  </div>
+                </div>
+              </details>
+
+              <button type="submit" class="primary">İşlemi Anında Ekle</button>
+            </form>
+          </section>
+
+          <section class="stat-card daily-board-card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Günlük Takip</p>
+                <h2>Bugün, Dün ve Gelecek</h2>
+              </div>
+              <div class="history-filter-tabs">
+                <button type="button" class="ghost active" data-daily-filter="today">Bugün</button>
+                <button type="button" class="ghost" data-daily-filter="yesterday">Dün</button>
+                <button type="button" class="ghost" data-daily-filter="upcoming">Gelecek</button>
+              </div>
+            </div>
+            <div id="daily-operations-list" class="history-list scroll-list empty-state">
+              Günlük işlem panosu burada görünecek.
+            </div>
+          </section>
+        </div>
+      </section>
+      </div>
+
+      <div class="view view-musteriler" data-view="musteriler">
+      <section class="content-grid">
+        <div class="left-column">
+          <div class="card customer-list-card">
+            <div class="section-head">
+              <h2>Müşteriler</h2>
+              <span id="customer-count" class="pill"></span>
+            </div>
+            <div class="stack customer-management-card view-action-row">
+              <button type="button" id="open-add-customer-dialog" class="primary">Müşteri Ekle</button>
+              <button type="button" id="open-edit-customer-dialog" class="ghost">Seçili Müşteriyi Düzenle</button>
+            </div>
+            <div class="customer-toolbar">
+              <label>
+                <span>Baş harf seç</span>
+                <select id="letter-filter">
+                  <option value="">Tüm Harfler</option>
+                  <option value="A">A</option>
+                  <option value="B">B</option>
+                  <option value="C">C</option>
+                  <option value="D">D</option>
+                  <option value="E">E</option>
+                  <option value="F">F</option>
+                  <option value="G">G</option>
+                  <option value="H">H</option>
+                  <option value="I">I</option>
+                  <option value="J">J</option>
+                  <option value="K">K</option>
+                  <option value="L">L</option>
+                  <option value="M">M</option>
+                  <option value="N">N</option>
+                  <option value="O">O</option>
+                  <option value="P">P</option>
+                  <option value="R">R</option>
+                  <option value="S">S</option>
+                  <option value="T">T</option>
+                  <option value="U">U</option>
+                  <option value="V">V</option>
+                  <option value="Y">Y</option>
+                  <option value="Z">Z</option>
+                </select>
+              </label>
+              <label class="customer-search-field">
+                <span>Müşteri ara</span>
+                <input id="search-input" type="search" placeholder="Isim yazarak ara">
+              </label>
+            </div>
+            <div id="customer-list" class="customer-list"></div>
+          </div>
+        </div>
+
+        <div class="detail-column">
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Seçili Müşteri</p>
+                <h2 id="detail-name">Müşteri seç</h2>
+              </div>
+              <div class="header-actions compact-actions">
+                <button id="quick-order-button" class="primary action-primary" disabled>Bugün İşlem Ekle</button>
+                <button type="button" id="toggle-customer-actions" class="ghost action-menu-trigger">Diğer İşlemler</button>
+              </div>
+            </div>
+            <div id="detail-overview" class="overview-grid"></div>
+          </section>
+
+          <section class="customer-operation-panel" aria-label="Müşteri işlem panelleri">
+            <div class="customer-operation-track">
+              <article class="customer-operation-slide" id="customer-panel-today">
+                <div class="section-head">
+                  <div>
+                    <p class="eyebrow">Bugün</p>
+                    <h2>Bugünkü İşlemler</h2>
+                  </div>
+                  <span class="pill" id="today-label"></span>
+                </div>
+                <div id="today-transaction-list" class="transaction-list empty-state">
+                  Soldaki listeden bir müşteri seç.
+                </div>
+              </article>
+
+              <article class="customer-operation-slide" id="customer-panel-future">
+                <div class="section-head">
+                  <div>
+                    <p class="eyebrow">Planlı</p>
+                    <h2>Gelecek Siparişler</h2>
+                  </div>
+                </div>
+                <div id="future-transaction-list" class="transaction-list empty-state">
+                  İleri tarihli siparişler burada görünecek.
+                </div>
+              </article>
+
+              <article class="customer-operation-slide" id="customer-panel-open">
+                <div class="section-head">
+                  <div>
+                    <p class="eyebrow">Açık Takip</p>
+                    <h2>Geçmişten Açık İşlemler</h2>
+                  </div>
+                </div>
+                <div id="transaction-list" class="transaction-list empty-state">
+                  Önceki günlerden açık kalan işlemler burada görünecek.
+                </div>
+              </article>
+
+              <article class="customer-operation-slide" id="customer-panel-history">
+                <div class="section-head">
+                  <div>
+                    <p class="eyebrow">Müşteri Geçmişi</p>
+                    <h2>Önceki Gunler</h2>
+                  </div>
+                </div>
+                <div id="customer-history" class="history-list empty-state">
+                  Seçili müşteriye ait geçmiş işlemler burada görünecek.
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <p class="eyebrow">Cari Hesap</p>
+                <h2>Müşteri Bakiyesi</h2>
+              </div>
+            </div>
+            <div id="customer-ledger" class="ledger-grid"></div>
+            <div class="ledger-detail-panel" aria-label="Cari hesap detay panelleri">
+              <div class="ledger-detail-track">
+                <article class="ledger-detail-slide">
+                  <div class="section-head sub-head">
+                    <h2>Devir Bakiyeleri</h2>
+                    <p class="section-hint">Önceki dönemden devredilen açık bakiye. Tahsilat yapıldığında kapanır.</p>
+                  </div>
+                  <div id="customer-rollovers" class="history-list scroll-list empty-state">
+                    Devreden bakiye kayıtlari burada görünecek.
+                  </div>
+                </article>
+
+                <article class="ledger-detail-slide">
+                  <div class="section-head sub-head">
+                    <h2>Kapanan Devir Bakiyeleri</h2>
+                  </div>
+                  <div id="customer-closed-rollovers" class="history-list scroll-list empty-state">
+                    Kapanmış devir bakiyesi yok.
+                  </div>
+                </article>
+
+                <article class="ledger-detail-slide">
+                  <div class="section-head sub-head">
+                    <h2>Cari Tahsilat Hareketleri</h2>
+                  </div>
+                  <div id="customer-collections" class="history-list scroll-list empty-state">
+                    Seçili müşteriye ait tahsilat hareketleri burada görünecek.
+                  </div>
+                </article>
+
+
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+      </div>
+
+      <div class="view view-ozet" data-view="ozet">
+        <div class="card ozet-card">
+          <label class="customer-search-field ozet-search-field">
+            <input id="ozet-search" type="search" placeholder="Müşteri ara..." aria-label="Müşteri ara" autocomplete="off">
+          </label>
+          <div class="ozet-table-wrap">
+            <table class="ozet-table">
+              <thead>
+                <tr>
+                  <th class="ozet-col-name">Müşteri</th>
+                  <th class="ozet-col-num">Aylık</th>
+                  <th class="ozet-col-num">Yıllık</th>
+                  <th class="ozet-col-action">İşlem</th>
+                </tr>
+              </thead>
+              <tbody id="ozet-table">
+                <tr><td colspan="4" class="ozet-empty">Müşteri borç tablosu burada görünecek.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="view view-kontrol" data-view="kontrol">
+        <section class="hero kontrol-hero">
+          <div class="operations-intro">
+            <p class="eyebrow">Kontrol Merkezi</p>
+            <h2>Günlük Risk ve Borç Özeti</h2>
+          </div>
+        </section>
+        <div class="command-center-card">
+          <div id="control-center-stats" class="hero-stats compact-stats"></div>
+          <div class="command-center-grid">
+            <section class="card command-list-card">
+              <div class="section-head compact">
+                <h3>En Borçlu Müşteriler</h3>
+              </div>
+              <div id="debt-watch-list" class="history-list scroll-list empty-state">
+                Borç özeti burada görünecek.
+              </div>
+            </section>
+            <section class="card command-list-card">
+              <div class="section-head compact">
+                <h3>Geciken ve Acil Takip</h3>
+              </div>
+              <div id="urgent-watch-list" class="history-list scroll-list empty-state">
+                Açık takip kayıtlari burada görünecek.
+              </div>
+            </section>
+          </div>
+        </div>
+        <section class="card">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">Rapor Özeti</p>
+              <h3>Kompakt Özet</h3>
+            </div>
+            <label class="inline-field">
+              <span>Yıl seç</span>
+              <select id="summary-year-filter"></select>
+            </label>
+          </div>
+          <div class="hero-stats compact-stats" id="summary-cards"></div>
+        </section>
+        <section class="card">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">Genel Geçmiş</p>
+              <h3>Tüm İşlem Geçmişi</h3>
+            </div>
+            <div class="history-filter-tabs">
+              <button type="button" class="ghost active" data-history-filter="today">Bugün</button>
+              <button type="button" class="ghost" data-history-filter="week">Haftalik</button>
+              <button type="button" class="ghost" data-history-filter="year">Yıllık</button>
+            </div>
+          </div>
+          <div id="global-history" class="history-list scroll-list empty-state">
+            Geçmiş günlere ait işlemler burada listelenecek.
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+    <nav class="bottom-nav" aria-label="Ana navigasyon">
+      <button type="button" class="bottom-nav-item active" data-nav-target="operasyon">
+        <span class="bottom-nav-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </span>
+        <span class="bottom-nav-label">Operasyon</span>
+      </button>
+      <button type="button" class="bottom-nav-item" data-nav-target="musteriler">
+        <span class="bottom-nav-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span class="bottom-nav-label">Müşteriler</span>
+      </button>
+      <button type="button" class="bottom-nav-item" data-nav-target="ozet">
+        <span class="bottom-nav-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </span>
+        <span class="bottom-nav-label">Genel Özet</span>
+      </button>
+      <button type="button" class="bottom-nav-item" data-nav-target="kontrol">
+        <span class="bottom-nav-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </span>
+        <span class="bottom-nav-label">Kontrol</span>
+      </button>
+      <button type="button" class="bottom-nav-item" data-nav-target="ayarlar">
+        <span class="bottom-nav-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
+        <span class="bottom-nav-label">Ayarlar</span>
+      </button>
+    </nav>
+  </div>
+
+  <dialog id="transaction-dialog" aria-labelledby="dialog-title">
+    <form id="transaction-form" class="dialog-form" method="dialog">
+      <input id="transaction-id" name="transactionId" type="hidden">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Bugünkü İşlem</p>
+          <h2 id="dialog-title">Sipariş Kaydı</h2>
+        </div>
+        <button type="button" id="close-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <div class="date-chip" id="dialog-date-chip"></div>
+      <label>
+        <span>İşlem tarihi</span>
+        <input id="transaction-date" name="transactionDate" type="date">
+      </label>
+      <div class="two-col">
+        <label>
+          <span>Ödeme planı</span>
+          <select id="transaction-payment-plan" name="paymentPlan">
+            <option value="0">Peşin / normal takip</option>
+            <option value="15">15 gün vadeli ödeme</option>
+          </select>
+        </label>
+        <label>
+          <span>Ödeme tarihi</span>
+          <input id="transaction-due-date" name="paymentDueDate" type="date">
+        </label>
+      </div>
+      <fieldset class="product-picker">
+        <legend>Ürün Seçimi</legend>
+        <div class="section-head compact">
+          <button type="button" id="add-product-row" class="ghost small-button">Satır Ekle</button>
+        </div>
+        <div id="product-rows" class="product-row-list"></div>
+      </fieldset>
+      <div class="two-col">
+        <label>
+          <span>Toplam tutar (TL)</span>
+          <input id="transaction-amount" name="amount" type="number" min="0" step="0.01" placeholder="0" required readonly>
+        </label>
+      </div>
+      <div class="two-col">
+        <label>
+          <span>Tahsil edilen (TL)</span>
+          <input id="transaction-paid" name="paid" type="number" min="0" step="0.01" placeholder="0" value="0">
+        </label>
+        <label>
+          <span>Durum asamasi</span>
+          <select id="transaction-stage" name="stage">
+            <option value="created">İşlem alindi</option>
+            <option value="editing">Düzenleniyor</option>
+            <option value="delivered">Teslim edildi</option>
+          </select>
+        </label>
+      </div>
+      <label>
+        <span>Kısa not</span>
+          <input id="transaction-note" name="note" type="text" placeholder="Örnek: Kalan 1000 TL">
+      </label>
+
+      <button type="submit" class="primary" id="save-transaction-button">İşlemi Kaydet</button>
+    </form>
+  </dialog>
+
+  <dialog id="collection-dialog" aria-labelledby="collection-title">
+    <form id="collection-form" class="dialog-form" method="dialog">
+      <input id="collection-transaction-id" name="transactionId" type="hidden">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Teslim ve Tahsilat</p>
+          <h2 id="collection-title">Tahsilat Gir</h2>
+        </div>
+        <button type="button" id="close-collection-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <div class="date-chip" id="collection-summary-chip"></div>
+
+      <div class="quick-collect-grid">
+        <button type="button" class="ghost quick-collect-button" data-ratio="0.25">Ceyregi Al</button>
+        <button type="button" class="ghost quick-collect-button" data-ratio="0.5">Yarisini Al</button>
+        <button type="button" class="ghost quick-collect-button" data-ratio="1">Tamamini Al</button>
+      </div>
+
+      <label>
+        <span>Tahsil edilen tutar (TL)</span>
+        <input id="collection-amount" name="collectionAmount" type="number" min="0" step="0.01" placeholder="0" required>
+      </label>
+
+      <label>
+        <span>Tahsilat notu</span>
+        <input id="collection-note" name="collectionNote" type="text" placeholder="Örnek: Yarisi alindi">
+      </label>
+
+      <div class="dialog-actions stacked">
+        <button type="submit" class="primary">Teslim Et ve Tahsilatı İşle</button>
+        <button type="button" id="mark-delivered-without-payment" class="ghost">Ürün Verildi, Para Alınmadı</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="catalog-dialog" aria-labelledby="catalog-dialog-title">
+    <div class="dialog-form">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Ürün Kataloğu</p>
+          <h2 id="catalog-dialog-title">Marka ve Ürün Yönetimi</h2>
+        </div>
+        <button type="button" id="close-catalog-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <div class="catalog-grid">
+        <section class="card nested-card">
+          <div class="section-head">
+            <h2>Marka Ekle</h2>
+          </div>
+          <form id="brand-form" class="stack">
+            <label>
+              <span>Marka adi</span>
+              <input id="brand-name" type="text" placeholder="Örnek: Yeni Marka">
+            </label>
+            <button type="submit" class="primary">Markayi Kaydet</button>
+          </form>
+        </section>
+
+        <section class="card nested-card">
+          <div class="section-head">
+            <h2>Ürün Ekle</h2>
+          </div>
+          <form id="product-form" class="stack">
+            <label>
+              <span>Marka seç</span>
+              <select id="product-brand-select"></select>
+            </label>
+            <label>
+              <span>Ürün adi</span>
+              <input id="product-name" type="text" placeholder="Örnek: 0.33 lt 12 li koli">
+            </label>
+            <button type="submit" class="primary">Ürünu Kaydet</button>
+          </form>
+        </section>
+      </div>
+
+      <section class="catalog-list-wrap">
+        <div class="section-head">
+          <h2>Mevcut Katalog</h2>
+        </div>
+        <div id="catalog-list" class="catalog-list scroll-list"></div>
+      </section>
+    </div>
+  </dialog>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-dialog-title">
+    <div class="dialog-form">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Ayarlar</p>
+          <h2 id="settings-dialog-title">Araçlar ve Yedek</h2>
+        </div>
+        <button type="button" id="close-settings-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <div class="stack tools-panel">
+        <div class="device-isolation-notice">
+          <span class="device-isolation-icon">📱</span>
+          <span><strong>Her cihaz kendi verisini tutar.</strong> Bulut senkronizasyonu yok — iki saha çalışanı aynı anda farklı cihazda farklı veri görür. Paylaşmak için JSON Yedek al ve diğer cihaza aktar.</span>
+        </div>
+        <div class="tool-block">
+          <h3>Veri Yedegi</h3>
+          <p class="muted">Cihaza indirerek yedek al, gerekirse geri yükle. Bulut yoksa en kritik güvence bu olur.</p>
+          <button type="button" id="export-backup-button" class="ghost">JSON Yedek İndir</button>
+          <button type="button" id="import-backup-button" class="ghost">Yedeği Geri Yükle</button>
+          <input id="import-backup-input" type="file" accept="application/json" hidden aria-label="Yedek JSON dosyası seç">
+        </div>
+        <div class="tool-block">
+          <h3>Ürün Yönetimi</h3>
+          <p class="muted">Yeni marka ve ürünleri panel içinden ekle, gerekiyorsa kaldır.</p>
+          <button type="button" id="open-catalog-dialog" class="ghost">Kataloğu Yonet</button>
+        </div>
+        <div class="tool-block">
+          <h3>Bildirimler</h3>
+          <p class="muted">Vade ve teslim hatırlatmaları için cihaz bildirimlerini aç.</p>
+          <button type="button" id="enable-notifications-button" class="ghost">Bildirimleri Aç</button>
+        </div>
+        <div class="tool-block">
+          <h3>İşletme Kimliği</h3>
+          <p class="muted">İşletme adını ve logonu özelleştir.</p>
+          <label>
+            <span>İşletme Adı</span>
+            <input id="brand-name-input" type="text" placeholder="TrackDesk" maxlength="40">
+          </label>
+          <div class="brand-logo-row">
+            <div id="brand-logo-preview" class="brand-logo-preview" aria-hidden="true"></div>
+            <button type="button" id="brand-logo-upload-button" class="ghost">Logo Yükle</button>
+            <button type="button" id="brand-logo-remove-button" class="ghost" hidden>Logoyu Kaldır</button>
+            <input id="brand-logo-input" type="file" accept="image/*" hidden aria-label="Logo dosyası seç">
+          </div>
+          <button type="button" id="brand-reset-button" class="ghost">Varsayılana Sıfırla</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="customer-actions-dialog" aria-labelledby="customer-actions-dialog-title">
+    <div class="dialog-form">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Seçili Müşteri</p>
+          <h2 id="customer-actions-dialog-title">Diğer İşlemler</h2>
+        </div>
+        <button type="button" id="close-customer-actions-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <label class="inline-field action-field">
+        <span>Rapor tarihi</span>
+        <input id="report-cutoff-date" type="date">
+      </label>
+      <button id="open-rollover-dialog" class="ghost action-menu-button" disabled>
+        <span class="action-menu-kicker">DEVIR</span>
+        <strong>Devir Ekle</strong>
+      </button>
+      <button id="print-customer-report" class="ghost action-menu-button" disabled>
+        <span class="action-menu-kicker">GÖRÜNTÜLE</span>
+        <strong>Raporu Aç / Yazdır</strong>
+      </button>
+      <button id="download-customer-report" class="ghost action-menu-button" disabled>
+        <span class="action-menu-kicker">İNDİR</span>
+        <strong>HTML Olarak İndir</strong>
+      </button>
+      <button id="delete-customer-button" class="danger action-menu-button" disabled>
+        <span class="action-menu-kicker">SIL</span>
+        <strong>Müşteriyi Sil</strong>
+      </button>
+    </div>
+  </dialog>
+
+  <dialog id="customer-picker-dialog" aria-labelledby="customer-picker-dialog-title">
+    <div class="dialog-form">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Müşteri Seçimi</p>
+          <h2 id="customer-picker-dialog-title">Müşteri Listesi</h2>
+        </div>
+        <button type="button" id="close-customer-picker-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <label>
+        <span>Müşteri ara</span>
+        <input id="customer-picker-search" type="text" placeholder="Isim yazarak ara" autocomplete="off">
+      </label>
+
+      <div id="customer-picker-results" class="customer-picker-results"></div>
+    </div>
+  </dialog>
+
+  <dialog id="customer-add-dialog" aria-labelledby="customer-add-dialog-title">
+    <form id="customer-add-form" class="dialog-form" method="dialog">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Yeni Müşteri</p>
+          <h2 id="customer-add-dialog-title">Müşteri Ekle</h2>
+        </div>
+        <button type="button" id="close-customer-add-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <label>
+        <span>Müşteri adi</span>
+        <input id="customer-add-name" name="name" type="text" placeholder="Örnek: Kodes" required>
+      </label>
+      <label>
+        <span>Yetkili kişi</span>
+        <input id="customer-add-contact-person" name="contactPerson" type="text" placeholder="Örnek: Ahmet Bey">
+      </label>
+      <label>
+        <span>Numara</span>
+        <input id="customer-add-phone" name="phone" type="text" inputmode="tel" placeholder="Örnek: 05xx xxx xx xx">
+      </label>
+      <label>
+        <span>Vergi numarasi</span>
+        <input id="customer-add-tax-number" name="taxNumber" type="text" inputmode="numeric" placeholder="Örnek: 1234567890">
+      </label>
+      <label>
+        <span>Adres</span>
+        <textarea id="customer-add-address" name="address" rows="4" placeholder="Örnek: Talas / Kayseri"></textarea>
+      </label>
+      <label>
+        <span>Kısa bilgi</span>
+        <input id="customer-add-note" name="note" type="text" placeholder="Örnek: Sultan 0.40">
+      </label>
+
+      <button type="submit" class="primary">Müşteriyi Ekle</button>
+    </form>
+  </dialog>
+
+  <dialog id="customer-editor-dialog" aria-labelledby="customer-editor-dialog-title">
+    <form id="customer-editor-form" class="dialog-form" method="dialog">
+      <input id="customer-editor-id" name="id" type="hidden">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Müşteri Düzenleme</p>
+          <h2 id="customer-editor-dialog-title">Müşteriyi Düzenle</h2>
+        </div>
+        <button type="button" id="close-customer-editor-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <label>
+        <span>Düzenlenecek müşteri</span>
+        <div class="quick-customer-picker">
+          <input id="customer-editor-picker-name" type="text" placeholder="Listeden seçmek için dokun" readonly required>
+          <button type="button" id="open-customer-editor-picker" class="ghost quick-customer-open-button">Listeden Seç</button>
+        </div>
+      </label>
+
+      <label>
+        <span>Müşteri adi</span>
+        <input id="customer-editor-name" name="name" type="text" placeholder="Örnek: Kodes">
+      </label>
+      <label>
+        <span>Yetkili kişi</span>
+        <input id="customer-editor-contact-person" name="contactPerson" type="text" placeholder="Örnek: Ahmet Bey">
+      </label>
+      <label>
+        <span>Numara</span>
+        <input id="customer-editor-phone" name="phone" type="text" inputmode="tel" placeholder="Örnek: 05xx xxx xx xx">
+      </label>
+      <label>
+        <span>Vergi numarasi</span>
+        <input id="customer-editor-tax-number" name="taxNumber" type="text" inputmode="numeric" placeholder="Örnek: 1234567890">
+      </label>
+      <label>
+        <span>Adres</span>
+        <textarea id="customer-editor-address" name="address" rows="4" placeholder="Örnek: Talas / Kayseri"></textarea>
+      </label>
+      <label>
+        <span>Kısa bilgi</span>
+        <input id="customer-editor-note" name="note" type="text" placeholder="Örnek: Sultan 0.40">
+      </label>
+
+      <button type="submit" class="primary">Müşteriyi Düzenle</button>
+    </form>
+  </dialog>
+
+  <dialog id="rollover-dialog" aria-labelledby="rollover-dialog-title">
+    <form id="rollover-form" class="dialog-form" method="dialog">
+      <input id="rollover-id" name="rolloverId" type="hidden">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Yıl Sonu Devri</p>
+          <h2 id="rollover-dialog-title">Devir Kaydı</h2>
+        </div>
+        <button type="button" id="close-rollover-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <div class="date-chip" id="rollover-preview-chip">Kaynak yılın açık bakiyesi burada görünecek.</div>
+
+      <div class="two-col">
+        <label>
+          <span>Kaynak yıl</span>
+          <select id="rollover-source-year" name="sourceYear"></select>
+        </label>
+        <label>
+          <span>Hedef yıl</span>
+          <select id="rollover-target-year" name="targetYear"></select>
+        </label>
+      </div>
+
+      <div class="two-col">
+        <label>
+          <span>Devir bakiye (TL)</span>
+          <input id="rollover-amount" name="amount" type="number" min="0" step="0.01" placeholder="0" required>
+        </label>
+        <label>
+          <span>Toplam tahsil edilen (TL)</span>
+          <input id="rollover-collected" name="collected" type="number" min="0" step="0.01" placeholder="0" value="0" readonly>
+        </label>
+      </div>
+
+      <label>
+        <span>Kısa not</span>
+        <input id="rollover-note" name="note" type="text" placeholder="Örnek: 2025 açık bakiye 2026'ya devredildi">
+      </label>
+
+      <button type="submit" class="primary">Devri Kaydet</button>
+    </form>
+  </dialog>
+
+  <dialog id="rollover-collection-dialog" aria-labelledby="rollover-collection-title">
+    <form id="rollover-collection-form" class="dialog-form" method="dialog">
+      <input id="rollover-collection-id" name="rolloverId" type="hidden">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Devir Tahsilatı</p>
+          <h2 id="rollover-collection-title">Tahsilat İşle</h2>
+        </div>
+        <button type="button" id="close-rollover-collection-dialog" class="ghost">Kapat</button>
+      </div>
+
+      <div class="date-chip" id="rollover-collection-summary-chip">Devir özeti burada görünecek.</div>
+
+      <div class="two-col">
+        <label>
+          <span>Tahsil edilen tutar (TL)</span>
+          <input id="rollover-collection-amount" name="amount" type="number" min="0" step="0.01" placeholder="0" required>
+        </label>
+        <label>
+          <span>Tahsilat tarihi</span>
+          <input id="rollover-collection-date" name="date" type="date" required>
+        </label>
+      </div>
+
+      <label>
+        <span>Tahsilat notu</span>
+        <input id="rollover-collection-note" name="note" type="text" placeholder="Örnek: 1. parcasi alindi">
+      </label>
+
+      <button type="submit" class="primary">Tahsilatı Kaydet</button>
+    </form>
+  </dialog>
+
+  <dialog id="islem-menu-dialog" aria-labelledby="islem-menu-title">
+    <div class="dialog-form">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">İşlem</p>
+          <h2 id="islem-menu-title">İşlem Yap</h2>
+        </div>
+        <button type="button" id="close-islem-menu-dialog" class="ghost">Kapat</button>
+      </div>
+      <div class="stack islem-menu-actions">
+        <button type="button" class="primary" data-islem-action="tahsilat">Tahsil Et</button>
+        <button type="button" class="ghost" data-islem-action="devir">Devir Ekle</button>
+    </div>
+    </div>
+  </dialog>
+
+  <dialog id="tahsilat-dialog" aria-labelledby="tahsilat-dialog-title">
+    <form id="tahsilat-form" class="dialog-form stack" method="dialog">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Tahsilat</p>
+                <h2 id="tahsilat-dialog-title">Tahsil Et</h2>
+                <p id="tahsilat-customer-name" class="muted"></p>
+            </div>
+            <button type="button" id="close-tahsilat-dialog" class="ghost">Kapat</button>
+        </div>
+        <label>
+            <span>Tahsil edilen tutar (TL)</span>
+            <input id="tahsilat-amount" name="amount" type="number" min="0.01" step="0.01" placeholder="0" required>
+        </label>
+        <label>
+            <span>Not (opsiyonel)</span>
+            <input id="tahsilat-note" name="note" type="text" placeholder="Örnek: Nakit ödeme">
+        </label>
+        <div id="tahsilat-preview" class="info-chip" style="display:none"></div>
+        <button type="submit" class="primary">Tahsilatı Kaydet</button>
+    </form>
+</dialog>
+
+  <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="seed-data.js?v=1"></script>
+  <script src="panel.js?v=13"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('service-worker.js?v=7').catch(function (error) {
+          console.warn('Service worker kayıt hatası:', error);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

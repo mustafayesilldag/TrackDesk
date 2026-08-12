@@ -1,0 +1,21 @@
+# TrackDesk — temiz URL yönlendirmeleri (Apache + mod_rewrite gerekir)
+# Backend (/backend/api/*.php) ve gerçek dosyalar bu kurallardan ETKİLENMEZ.
+
+RewriteEngine On
+
+# Gerçek dosya/dizin isteniyorsa (panel.html, backend/api/..., styless.css)
+# olduğu gibi servis et, yeniden yazma.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Tanıtım sitesi:  x.com/tanitim  ->  tanitim.html
+RewriteRule ^tanitim/?$ tanitim.html [L]
+
+# Panel (uygulama):  x.com/panel  ->  panel.html
+# Kök derinlikte servis edilir; ./backend/api/ yolu doğru çözülür.
+RewriteRule ^panel/?$ panel.html [L]
+
+# x.com/tanitim/panel istenirse temiz /panel adresine yönlendir
+# (düz dosya yapısında backend yolunu bozmamak için).
+RewriteRule ^tanitim/panel/?$ /panel [R=301,L]

@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="TrackDesk — Müşteri, sipariş ve tahsilat takibi. Telefon, tablet ve bilgisayardan eş zamanlı; veriler sunucuda şifreli korunur.">
+  <title>TrackDesk — Satış ve Tahsilat Paneli</title>
+
+  <!-- ── Sosyal paylaşım (LinkedIn/WhatsApp link önizlemesi) ──
+       DEPLOY: yayına alınca aşağıdaki https://SENIN-DOMAIN.com kısmını
+       gerçek alan adınla değiştir (og:url ve og:image MUTLAK URL olmalı). -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="TrackDesk">
+  <meta property="og:title" content="TrackDesk — Çok Cihazlı Satış & Tahsilat Takibi">
+  <meta property="og:description" content="Sipariş, teslimat ve tahsilat tek panelde. Telefon, tablet ve bilgisayardan aynı veriye anında bağlan; veriler sunucuda şifreli.">
+  <meta property="og:image" content="https://SENIN-DOMAIN.com/assets/og-trackdesk.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:url" content="https://SENIN-DOMAIN.com/tanitim">
+  <meta property="og:locale" content="tr_TR">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="TrackDesk — Çok Cihazlı Satış & Tahsilat Takibi">
+  <meta name="twitter:description" content="Sipariş, teslimat ve tahsilat tek panelde. Her cihazdan eş zamanlı; veriler sunucuda şifreli.">
+  <meta name="twitter:image" content="https://SENIN-DOMAIN.com/assets/og-trackdesk.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #ffffff;
+      --panel:        #ffffff;
+      --panel-strong: #f3f4f9;
+      --line:         rgba(29,78,216,0.33);
+      --text:         #1e1b4b;
+      --muted:        #565d6b;
+      --accent:       #1D4ED8;
+      --accent-dark:  #1E40AF;
+      --accent-light: #1E40AF;
+      --ok:           #059669;
+      --warn:         #b45309;
+      --danger:       #be123c;
+      --ease-out:     cubic-bezier(0.23, 1, 0.32, 1);
+      --hover-glow-md: 0 6px 18px rgba(29,78,216,0.22);
+      --hover-glow-lg: 0 14px 32px rgba(29,78,216,0.18);
+      font-family: "Manrope", sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Utils ── */
+    .container {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      border-radius: 14px;
+      padding: 13px 22px;
+      font: 800 1rem "Manrope", sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      transition: transform 0.18s var(--ease-out), box-shadow 0.18s var(--ease-out), background 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+    }
+    /* Press feedback — arayüzün dokunuşu duyduğunu hissettirir (Emil) */
+    .btn:active { transform: scale(0.96); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(29, 78, 216,0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(29, 78, 216,0.45);
+    }
+    .btn-primary:active { transform: scale(0.96); }
+
+    .btn-ghost {
+      background: rgba(29, 78, 216,0.08);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    .btn-ghost:hover {
+      background: rgba(29,78,216,0.14);
+      border-color: rgba(29,78,216,0.6);
+      transform: translateY(-1px) scale(1.015);
+      box-shadow: var(--hover-glow-md);
+    }
+
+    /* ── Nav ── */
+    .nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav-inner {
+      max-width: 1160px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--accent-light);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--accent-light); }
+    .nav-link {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: color 0.15s ease;
+    }
+    .nav-link:hover { color: var(--text); }
+    .nav .btn { padding: 10px 18px; font-size: 0.9rem; }
+    .nav-actions { display: flex; align-items: center; gap: 10px; }
+    /* Mobilde iletişim alttaki sticky bar'da; nav'ı sade tut */
+    @media (max-width: 560px) { .nav-contact { display: none; } }
+
+    /* ── Mobil sticky iletişim CTA ── */
+    .mobile-cta-bar {
+      position: fixed;
+      left: 0; right: 0; bottom: 0;
+      z-index: 180;
+      display: none;
+      padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+      background: linear-gradient(to top, rgba(255,255,255,0.98), rgba(255,255,255,0.9));
+      border-top: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      transition: transform 0.3s var(--ease-out);
+    }
+    .mobile-cta-bar .btn { width: 100%; justify-content: center; }
+    .mobile-cta-bar.hidden { transform: translateY(120%); }
+    @media (max-width: 720px) {
+      .mobile-cta-bar { display: block; }
+      body { padding-bottom: 76px; }
+    }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 120px 24px 100px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('assets/hero-bg.jpg');
+      background-size: cover;
+      background-position: center;
+      background-color: var(--bg);
+    }
+    .hero-glow {
+      position: absolute;
+      top: -140px; left: 50%;
+      transform: translateX(-50%);
+      width: 800px; height: 800px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(29, 78, 216,0.13) 0%, transparent 70%);
+      pointer-events: none;
+      animation: breathe 7s ease-in-out infinite;
+    }
+    @keyframes breathe {
+      0%,100% { transform: translateX(-50%) scale(1); opacity: 1; }
+      50%      { transform: translateX(-50%) scale(1.14); opacity: 0.7; }
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 740px;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      background: rgba(29, 78, 216,0.1);
+      border: 1px solid rgba(29, 78, 216,0.26);
+      border-radius: 999px;
+      padding: 7px 16px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--accent-light);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+    .badge-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--ok);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.5; transform: scale(0.75); }
+    }
+    .hero-h1 {
+      font-size: clamp(2.8rem, 7vw, 5.2rem);
+      font-weight: 800;
+      line-height: 1.04;
+      letter-spacing: -0.035em;
+      color: var(--text);
+      text-wrap: balance;
+      margin-bottom: 24px;
+    }
+    .hero-h1 .hl { color: var(--accent-light); }
+    @media (max-width: 480px) {
+      .hero-h1-break { display: none; }
+    }
+    .hero-sub {
+      font-size: clamp(1rem, 2.2vw, 1.18rem);
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 520px;
+      margin: 0 auto 44px;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* Decorative floating chips */
+    .hero-chips {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .dchip {
+      position: absolute;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px 18px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 30px rgba(29,78,216,0.12);
+      opacity: 0;
+      animation: chipFloat 0.65s cubic-bezier(0.4,0,0.2,1) forwards;
+      min-width: 155px;
+    }
+    .dchip-name  { display: block; font-size: 0.78rem; font-weight: 800; color: var(--accent-light); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+    .dchip-amount{ display: block; font-size: 1.15rem; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+    .dchip-label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+    .dbadge {
+      display: inline-flex; align-items: center;
+      border-radius: 999px; padding: 3px 10px;
+      font-size: 0.7rem; font-weight: 800; margin-top: 7px;
+    }
+    .dbadge-ok   { background: rgba(5,150,105,0.12);  color: #047857; }
+    .dbadge-warn { background: rgba(217,119,6,0.12);  color: #92400e; }
+    .dbadge-bad  { background: rgba(225,29,72,0.12); color: #9f1239; }
+    @keyframes chipFloat {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .dchip-tl { top: 23%; left: 4%;    animation-delay: 0.5s; }
+    .dchip-tr { top: 19%; right: 4%;   animation-delay: 0.85s; }
+    .dchip-bl { bottom: 23%; left: 3%; animation-delay: 1.15s; }
+    .dchip-br { bottom: 18%; right: 3%;animation-delay: 1.45s; }
+    @media (max-width: 1100px) { .hero-chips { display: none; } }
+
+    /* ── Showcase ── */
+    .showcase {
+      padding: 100px 0 80px;
+      background: var(--bg);
+    }
+    .showcase-title {
+      text-align: center;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      text-wrap: balance;
+      line-height: 1.15;
+      margin-bottom: 60px;
+    }
+    .showcase-title .hl { color: var(--accent-light); }
+
+    .device-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 0 16px;
+    }
+    .device-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+    .device-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent-light);
+      background: rgba(29, 78, 216,0.1);
+      border: 1px solid rgba(29, 78, 216,0.22);
+      border-radius: 999px;
+      padding: 5px 14px;
+    }
+    .device-frame {
+      border: 1.5px solid rgba(29,78,216,0.2);
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,0.03),
+        0 32px 80px rgba(0,0,0,0.65),
+        0 0 60px rgba(29,78,216,0.08);
+      overflow: hidden;
+      /* iframe boyanmadan önce/yüklenmezse markalı zemin (siyah void yerine) */
+      background: radial-gradient(circle at 50% 32%, rgba(29,78,216,0.08), #f3f4f9 68%);
+      position: relative;
+      transition: transform 0.3s var(--ease-out), box-shadow 0.3s ease;
+    }
+    .device-frame:hover {
+      transform: translateY(-5px);
+      box-shadow:
+        0 0 0 1px rgba(29,78,216,0.15),
+        0 40px 100px rgba(0,0,0,0.7),
+        0 0 80px rgba(29,78,216,0.14);
+    }
+    .device-frame::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(180deg, rgba(29,78,216,0.05) 0%, transparent 25%);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .device-phone .device-frame { width: 224px; height: 484px; border-radius: 32px; }
+    .device-phone iframe        { width: 390px; height: 844px; border: none; transform: scale(0.5744); transform-origin: top left; pointer-events: none; display: block; }
+    .device-tablet .device-frame{ width: 386px; height: 540px; border-radius: 22px; }
+    .device-tablet iframe       { width: 768px; height: 1072px; border: none; transform: scale(0.5026); transform-origin: top left; pointer-events: none; display: block; }
+    .device-desktop .device-frame{ width: 572px; height: 386px; border-radius: 12px; }
+    .device-desktop .device-frame::after {
+      content: ''; position: absolute; top: 0; left: 0; right: 0;
+      height: 26px; background: rgba(243,244,249,0.96); z-index: 2;
+      border-bottom: 1px solid var(--line);
+    }
+    .device-desktop iframe { width: 1144px; height: 772px; border: none; transform: scale(0.5); transform-origin: top left; pointer-events: none; display: block; }
+    .showcase-cta { text-align: center; margin-top: 52px; }
+    @media (max-width: 1279px) { .device-desktop { display: none; } }
+    @media (max-width: 680px) { .device-tablet  { display: none; } }
+
+    /* ── Steps ── */
+    .steps {
+      padding: 100px 0;
+      border-top: 1px solid var(--line);
+      background: var(--bg);
+    }
+    .section-head { text-align: center; margin-bottom: 64px; }
+    .section-h2 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      text-wrap: balance;
+      line-height: 1.15;
+    }
+    .section-h2 .hl { color: var(--accent-light); }
+    .section-sub {
+      font-size: 1rem;
+      color: var(--muted);
+      margin-top: 12px;
+      max-width: 460px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.65;
+    }
+    .steps-track {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: start;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 0 20px;
+    }
+    .step-num {
+      width: 54px; height: 54px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      box-shadow: 0 0 0 8px rgba(29, 78, 216,0.1), 0 4px 20px rgba(29, 78, 216,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 20px;
+      flex-shrink: 0;
+    }
+    .step h3 {
+      font-size: 1.12rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+    .step p {
+      font-size: 0.93rem;
+      color: var(--muted);
+      line-height: 1.65;
+      max-width: 240px;
+    }
+    .step-connector {
+      display: flex;
+      align-items: center;
+      padding-top: 27px;
+    }
+    .step-connector::before {
+      content: '';
+      display: block;
+      width: 48px; height: 2px;
+      background: linear-gradient(90deg, var(--accent), rgba(29, 78, 216,0.25));
+      border-radius: 1px;
+    }
+    @media (max-width: 760px) {
+      .steps-track { grid-template-columns: 1fr; gap: 36px; }
+      .step-connector { display: none; }
+    }
+
+    /* ── Features ── */
+    .features {
+      padding: 100px 0;
+      border-top: 1px solid var(--line);
+      background:
+        radial-gradient(ellipse 50% 60% at 75% 40%, rgba(29, 78, 216,0.07) 0%, transparent 65%),
+        var(--bg);
+    }
+    .features-inner {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 64px;
+      align-items: center;
+    }
+    .features-left h2 {
+      font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      line-height: 1.15;
+      text-wrap: balance;
+      margin-bottom: 18px;
+    }
+    .features-left h2 .hl { color: var(--accent-light); }
+    .features-left > p {
+      font-size: 1rem;
+      color: var(--muted);
+      line-height: 1.7;
+      margin-bottom: 36px;
+    }
+    .feature-list { display: flex; flex-direction: column; }
+    .feature-row {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: 16px;
+      padding: 22px 0;
+      border-bottom: 1px solid var(--line);
+      align-items: start;
+    }
+    .feature-row:first-child { border-top: 1px solid var(--line); }
+    .ficon {
+      width: 44px; height: 44px;
+      border-radius: 13px;
+      background: rgba(29, 78, 216,0.1);
+      border: 1px solid rgba(29, 78, 216,0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-light);
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .ftext h3 {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 5px;
+      letter-spacing: -0.01em;
+    }
+    .ftext p { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+    /* Preview panel */
+    .features-right {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .pcard {
+      position: relative;
+      overflow: hidden;
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px 20px;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .pcard:hover {
+      transform: translateY(-2px) scale(1.015);
+      border-color: rgba(29,78,216,0.6);
+      box-shadow: var(--hover-glow-lg);
+    }
+
+    /* ── Spot glow: fareyi takip eden seçici parlaklık ──
+         Sadece hover destekleyen/imleçli cihazlarda JS ile (aşağıdaki script)
+         .pcard ve .device-frame içine eklenen tek bir <span>. Statik marka
+         rengini (indigo) korur, sadece konumu fareye göre değişir — ikinci
+         bir renk veya efekt ailesi eklemiyor, mevcut "seçici parlaklık"
+         disiplinine (hero-glow/cta-glow gibi) bir kart-seviyesi karşılık. */
+    .spot-glow {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      border-radius: inherit;
+      background: radial-gradient(220px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(29, 78, 216,0.16), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.25s ease;
+      pointer-events: none;
+    }
+    .pcard:hover .spot-glow,
+    .device-frame:hover .spot-glow {
+      opacity: 1;
+    }
+    .pcard > *:not(.spot-glow) {
+      position: relative;
+      z-index: 1;
+    }
+    /* Dashboard header card */
+    .pdash-label {
+      font-size: 0.92rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+    .pdash-stats {
+      display: flex;
+      gap: 10px;
+    }
+    .pdash-stat {
+      flex: 1;
+      background: rgba(29,78,216,0.05);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+    .pdash-stat-val {
+      display: block;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--accent-light);
+      letter-spacing: -0.01em;
+    }
+    .pdash-stat-val.cv-danger { color: var(--danger); }
+    .pdash-stat-val.cv-warn   { color: var(--warn); }
+    .pdash-stat-key {
+      display: block;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 3px;
+    }
+    /* Customer list card */
+    .pcustomer-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .pcustomer-item:last-child { border-bottom: none; padding-bottom: 0; }
+    .pcustomer-item:first-child { padding-top: 0; }
+    .pcustomer-info { flex: 1; min-width: 0; }
+    .pcustomer-name {
+      display: block;
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .pcustomer-sub {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+    .pcustomer-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .pcustomer-amount {
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .pcustomer-amount.cv-danger { color: var(--danger); }
+    .pcustomer-amount.cv-warn   { color: var(--warn); }
+    .pcustomer-amount.cv-ok     { color: var(--ok); }
+    .pbadge {
+      display: inline-flex; align-items: center;
+      border-radius: 999px; padding: 2px 8px;
+      font-size: 0.68rem; font-weight: 800;
+    }
+    .pbadge-ok   { background: rgba(5,150,105,0.12);  color: #047857; }
+    .pbadge-warn { background: rgba(217,119,6,0.12);  color: #92400e; }
+    .pbadge-bad  { background: rgba(225,29,72,0.12); color: #9f1239; }
+    @media (max-width: 900px) {
+      .features-inner { grid-template-columns: 1fr; gap: 48px; }
+    }
+
+    /* ── CTA ── */
+    .cta-section {
+      padding: 120px 24px;
+      text-align: center;
+      border-top: 1px solid var(--line);
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse 70% 60% at 50% 50%, rgba(29, 78, 216,0.13) 0%, transparent 65%),
+        var(--bg);
+    }
+    .cta-glow {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%,-50%);
+      width: 640px; height: 420px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(29, 78, 216,0.14) 0%, transparent 70%);
+      pointer-events: none;
+      animation: breathe 5s ease-in-out infinite;
+    }
+    .cta-section h2 {
+      position: relative;
+      font-size: clamp(2rem, 5vw, 3.8rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      text-wrap: balance;
+      line-height: 1.08;
+      margin-bottom: 16px;
+    }
+    .cta-section h2 .hl { color: var(--accent-light); }
+    .cta-section > p {
+      position: relative;
+      font-size: 1rem;
+      color: var(--muted);
+      margin-bottom: 40px;
+    }
+    .cta-checks {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 28px;
+      position: relative;
+    }
+    .cta-check {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .check-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--ok);
+      flex-shrink: 0;
+    }
+    .cta-actions { position: relative; }
+
+    /* ── İletişim ── */
+    .contact-section {
+      padding: 80px 24px;
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .contact-section h2 {
+      font-size: clamp(1.75rem, 4vw, 2.6rem);
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 1.15;
+    }
+    .contact-section > p {
+      color: var(--muted);
+      margin-bottom: 28px;
+      font-size: 1.05rem;
+    }
+    .contact-person {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      margin: 0 auto 36px;
+      padding: 10px 22px 10px 12px;
+      background: rgba(29, 78, 216,0.06);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      text-align: left;
+    }
+    .contact-avatar {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(29, 78, 216,0.45);
+      flex-shrink: 0;
+    }
+    .contact-person-text { display: flex; flex-direction: column; gap: 2px; }
+    .contact-person-name { font-weight: 800; color: var(--text); }
+    .contact-person-role { font-size: 0.85rem; color: var(--muted); }
+    .contact-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+    .contact-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px 24px;
+      text-decoration: none;
+      color: var(--text);
+      transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+    }
+    .contact-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(29, 78, 216,0.18);
+    }
+    .contact-icon {
+      flex-shrink: 0;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(29, 78, 216,0.12);
+      color: var(--accent-light);
+      display: grid;
+      place-items: center;
+    }
+    .contact-info { text-align: left; }
+    .contact-label {
+      display: block;
+      font-size: 0.76rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+    .contact-value {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent-light);
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 28px 24px;
+      text-align: center;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+    footer strong { color: var(--accent-light); }
+
+    /* ── Reveal ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.55s cubic-bezier(0.4,0,0.2,1),
+                  transform 0.55s cubic-bezier(0.4,0,0.2,1);
+    }
+    .reveal.visible { opacity: 1; transform: none; }
+    .d1 { transition-delay: 0.1s; }
+    .d2 { transition-delay: 0.22s; }
+    .d3 { transition-delay: 0.34s; }
+    .d4 { transition-delay: 0.46s; }
+
+    /* ── iframe yükleme göstergesi ── */
+    .iframe-loader {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at 50% 32%, rgba(29,78,216,0.08), #f3f4f9 68%);
+      transition: opacity 0.5s ease;
+      border-radius: inherit;
+    }
+    .iframe-loader.loaded { opacity: 0; pointer-events: none; }
+    .iframe-spinner {
+      width: 26px; height: 26px;
+      border: 2px solid rgba(29, 78, 216,0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── SSS ── */
+    .faq {
+      padding: 100px 0;
+      border-top: 1px solid var(--line);
+      background:
+        radial-gradient(ellipse 55% 50% at 20% 60%, rgba(29, 78, 216,0.06) 0%, transparent 65%),
+        var(--bg);
+    }
+    .faq-list {
+      max-width: 720px;
+      margin: 0 auto;
+      border-top: 1px solid var(--line);
+    }
+    .faq-item { border-bottom: 1px solid var(--line); }
+    .faq-item summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      cursor: pointer;
+      list-style: none;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      gap: 16px;
+      user-select: none;
+    }
+    .faq-item summary::-webkit-details-marker { display: none; }
+    .faq-chevron {
+      flex-shrink: 0;
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: rgba(29, 78, 216,0.1);
+      border: 1px solid rgba(29, 78, 216,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-light);
+      transition: transform 0.25s var(--ease-out);
+    }
+    details[open] .faq-chevron { transform: rotate(180deg); }
+    .faq-answer {
+      font-size: 0.95rem;
+      color: var(--muted);
+      line-height: 1.72;
+      padding-bottom: 20px;
+      max-width: 640px;
+    }
+    .faq-answer a { color: var(--accent-light); font-weight: 700; text-decoration: none; }
+    .faq-answer a:hover { text-decoration: underline; }
+
+    @media (hover: none) {
+      .btn-primary:hover,
+      .btn-ghost:hover,
+      .device-frame:hover,
+      .pcard:hover { transform: none; box-shadow: inherit; }
+      .spot-glow { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .reveal { opacity: 1; transform: none; transition: none; }
+      .hero-glow, .cta-glow { animation: none; }
+      .badge-dot { animation: none; }
+      .dchip { animation: none; opacity: 1; }
+      .iframe-spinner { animation: none; }
+      .device-frame, .pcard { transition: none; }
+      .btn { transition: none; }
+      .spot-glow { display: none; }
+    }
+
+    /* ── Aydınlık Tema (varsayılan) ── */
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav class="nav" aria-label="Ana navigasyon">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">Track<span>Desk</span></a>
+    <div class="nav-actions">
+    <a href="#iletisim" class="btn btn-ghost nav-contact">İletişim</a>
+    <a href="panel.html?preview=1" class="btn btn-primary" target="_blank" rel="noopener">
+      Demoyu Dene
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+        <path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── Mobil sticky iletişim CTA ── -->
+<div class="mobile-cta-bar" id="mobile-cta">
+  <a href="#iletisim" class="btn btn-primary">İletişime Geç</a>
+</div>
+
+<!-- ── Hero ── -->
+<section class="hero" aria-labelledby="hero-h1">
+  <div class="hero-bg" aria-hidden="true"></div>
+  <div class="hero-glow" aria-hidden="true"></div>
+
+  <div class="hero-chips" aria-hidden="true">
+    <div class="dchip dchip-tl">
+      <span class="dchip-name">Alfa Ticaret</span>
+      <span class="dchip-amount">₺8.400</span>
+      <span class="dchip-label">Açık Bakiye</span>
+      <span class="dbadge dbadge-warn">Beklemede</span>
+    </div>
+    <div class="dchip dchip-tr">
+      <span class="dchip-label">Son Tahsilat</span>
+      <span class="dchip-amount">₺2.250</span>
+      <span class="dbadge dbadge-ok">Tahsil Edildi</span>
+    </div>
+    <div class="dchip dchip-bl">
+      <span class="dchip-label">Yeni Sipariş</span>
+      <span class="dchip-name">Premium Seri × 3</span>
+      <span class="dchip-amount">₺1.200</span>
+    </div>
+    <div class="dchip dchip-br">
+      <span class="dchip-label">Toplam Alacak</span>
+      <span class="dchip-amount">₺24.600</span>
+      <span class="dbadge dbadge-bad">5 Gecikmiş</span>
+    </div>
+  </div>
+
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="badge-dot" aria-hidden="true"></span>
+      Çok Cihazlı Canlı Sistem
+    </div>
+    <h1 class="hero-h1" id="hero-h1">
+      Müşterini Takip Et.<br class="hero-h1-break">
+      <span class="hl">Paranı Koru.</span>
+    </h1>
+    <p class="hero-sub">
+      Sipariş, teslimat ve tahsilat — tek panelde. Saha ve ofis her an aynı anlık veriyi görür; biri kayıt girer, herkeste anında güncellenir.
+    </p>
+    <div class="hero-actions">
+      <a href="panel.html?preview=1" class="btn btn-primary" target="_blank" rel="noopener">
+        Demoyu Dene
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+      <a href="#showcase" class="btn btn-ghost">
+        Nasıl Çalışır
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+          <path d="M6.5 1.5v10M1.5 6.5l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ── Showcase ── -->
+<section class="showcase" id="showcase" aria-labelledby="showcase-h2">
+  <div class="container">
+    <h2 class="showcase-title reveal" id="showcase-h2">
+      Telefon, tablet, masaüstü — <span class="hl">aynı veri, her an.</span>
+    </h2>
+  </div>
+  <div class="device-row">
+    <div class="device-wrap device-phone reveal">
+      <span class="device-label">Telefon · 390px</span>
+      <div class="device-frame">
+        <div class="iframe-loader" aria-hidden="true"><div class="iframe-spinner"></div></div>
+        <iframe src="panel.html?preview=1" scrolling="no" title="TrackDesk Telefon Görünümü" loading="lazy"></iframe>
+      </div>
+    </div>
+    <div class="device-wrap device-tablet reveal d1">
+      <span class="device-label">Tablet · 768px</span>
+      <div class="device-frame">
+        <div class="iframe-loader" aria-hidden="true"><div class="iframe-spinner"></div></div>
+        <iframe src="panel.html?preview=1" scrolling="no" title="TrackDesk Tablet Görünümü" loading="lazy"></iframe>
+      </div>
+    </div>
+    <div class="device-wrap device-desktop reveal d2">
+      <span class="device-label">Masaüstü · 1144px</span>
+      <div class="device-frame">
+        <div class="iframe-loader" aria-hidden="true"><div class="iframe-spinner"></div></div>
+        <iframe src="panel.html?preview=1" scrolling="no" title="TrackDesk Masaüstü Görünümü" loading="lazy"></iframe>
+      </div>
+    </div>
+  </div>
+  <div class="showcase-cta reveal">
+    <a href="panel.html?preview=1" class="btn btn-primary" target="_blank" rel="noopener">
+      Tam Ekranda Aç
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+        <path d="M8 1h4v4M5 8l7-7M1 5V1h4M1 8l4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+</section>
+
+<!-- ── Steps ── -->
+<section class="steps" aria-labelledby="steps-h2">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-h2 reveal" id="steps-h2">Üç adımda <span class="hl">hazır.</span></h2>
+      <p class="section-sub reveal d1">Teknik bilgi gerekmez. Aç, kullan, kazan.</p>
+    </div>
+    <div class="steps-track">
+      <div class="step reveal">
+        <div class="step-num" aria-hidden="true">1</div>
+        <h3>Müşteri Seç</h3>
+        <p>Arama veya harf filtresiyle müşterini anında bul. Son işlem geçmişi tek bakışta görünür.</p>
+      </div>
+      <div class="step-connector" aria-hidden="true"></div>
+      <div class="step reveal d2">
+        <div class="step-num" aria-hidden="true">2</div>
+        <h3>İşlem Gir</h3>
+        <p>Ürün seç, miktarı gir, teslimat tarihini belirle. Ödemeyi şimdi veya sonraya bırak.</p>
+      </div>
+      <div class="step-connector" aria-hidden="true"></div>
+      <div class="step reveal d3">
+        <div class="step-num" aria-hidden="true">3</div>
+        <h3>Tahsil Et</h3>
+        <p>Ödeme al, tek tuşla onayla. Bakiye otomatik güncellenir, tahsilat geçmişi kayıt altına girer.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section class="features" aria-labelledby="features-h2">
+  <div class="container">
+    <div class="features-inner">
+      <div class="features-left">
+        <h2 class="reveal" id="features-h2">
+          Takip gerektiren her şey,<br><span class="hl">tek yerde.</span>
+        </h2>
+        <p class="reveal d1">
+          Sahada geçirilen her dakika değerlidir. Paneli ihtiyacın olduğunda açarsın, işini yaparsın, kapatırsın.
+        </p>
+        <div class="feature-list" role="list">
+          <div class="feature-row reveal" role="listitem">
+            <div class="ficon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+            <div class="ftext">
+              <h3>Cari Hesap Takibi</h3>
+              <p>Müşteri başına açık bakiye, tahsilat geçmişi ve devir bakiyesi. Kimin ne kadar borçlu, tek ekranda.</p>
+            </div>
+          </div>
+          <div class="feature-row reveal d1" role="listitem">
+            <div class="ficon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            <div class="ftext">
+              <h3>Risk ve Borç Özeti</h3>
+              <p>En borçlu müşteriler, geciken ödemeler, acil takip listesi. Risk görünür; sürpriz olmaz.</p>
+            </div>
+          </div>
+          <div class="feature-row reveal d2" role="listitem">
+            <div class="ficon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+            <div class="ftext">
+              <h3>Her Cihazdan Eş Zamanlı</h3>
+              <p>Telefon, tablet ve bilgisayardan giriş yap; saha ve ofis aynı anlık veriyi görür. Biri kayıt girer, herkeste anında güncellenir.</p>
+            </div>
+          </div>
+          <div class="feature-row reveal d3" role="listitem">
+            <div class="ficon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+            <div class="ftext">
+              <h3>Güvenli Sunucu Altyapısı</h3>
+              <p>Veriler sunucudaki MySQL veritabanında şifreli saklanır ve düzenli yedeklenir. Cihazını kaybetsen de verin güvende, giriş bilgilerinle her yerden erişilir.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="features-right" aria-hidden="true">
+        <!-- Özet stats -->
+        <div class="pcard reveal">
+          <p class="pdash-label">Kontrol Merkezi</p>
+          <div class="pdash-stats">
+            <div class="pdash-stat">
+              <span class="pdash-stat-val">₺52.860</span>
+              <span class="pdash-stat-key">Açık Bakiye</span>
+            </div>
+            <div class="pdash-stat">
+              <span class="pdash-stat-val cv-danger">9</span>
+              <span class="pdash-stat-key">Gecikmiş</span>
+            </div>
+            <div class="pdash-stat">
+              <span class="pdash-stat-val cv-warn">3</span>
+              <span class="pdash-stat-key">Bugün Vadesi</span>
+            </div>
+          </div>
+        </div>
+        <!-- Customer list preview -->
+        <div class="pcard reveal d1">
+          <p class="pdash-label">Müşteriler</p>
+          <div class="pcustomer-item">
+            <div class="pcustomer-info">
+              <span class="pcustomer-name">Ceylan Tekstil A.Ş.</span>
+              <span class="pcustomer-sub">4 açık sipariş</span>
+            </div>
+            <div class="pcustomer-right">
+              <span class="pbadge pbadge-bad">Gecikmiş</span>
+              <span class="pcustomer-amount cv-danger">₺30.500</span>
+            </div>
+          </div>
+          <div class="pcustomer-item">
+            <div class="pcustomer-info">
+              <span class="pcustomer-name">Beta Gıda San. Tic. A.Ş.</span>
+              <span class="pcustomer-sub">3 açık sipariş</span>
+            </div>
+            <div class="pcustomer-right">
+              <span class="pbadge pbadge-warn">Beklemede</span>
+              <span class="pcustomer-amount cv-warn">₺13.740</span>
+            </div>
+          </div>
+          <div class="pcustomer-item">
+            <div class="pcustomer-info">
+              <span class="pcustomer-name">Alfa Ticaret Ltd. Şti.</span>
+              <span class="pcustomer-sub">Aylık düzenli sipariş</span>
+            </div>
+            <div class="pcustomer-right">
+              <span class="pbadge pbadge-ok">Ödendi</span>
+              <span class="pcustomer-amount cv-ok">₺0,00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── SSS ── -->
+<section class="faq" aria-labelledby="faq-h2">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-h2 reveal" id="faq-h2">Sık sorulan <span class="hl">sorular.</span></h2>
+    </div>
+    <div class="faq-list">
+      <details class="faq-item reveal">
+        <summary>
+          Kurulum ne kadar sürer?
+          <span class="faq-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </summary>
+        <p class="faq-answer">Hosting ve alan adı hazırsa kurulum genellikle 1–2 iş günü alır. Veritabanı yapılandırması, kullanıcı girişleri ve ilk ayarları birlikte yapıyoruz.</p>
+      </details>
+      <details class="faq-item reveal d1">
+        <summary>
+          Birden fazla kullanıcı aynı anda kullanabilir mi?
+          <span class="faq-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </summary>
+        <p class="faq-answer">Evet. Telefon, tablet ve bilgisayardan eş zamanlı giriş yapılabilir. Saha ekibi ve ofis aynı anda çalışır; biri kayıt girdiğinde herkeste anında görünür.</p>
+      </details>
+      <details class="faq-item reveal d2">
+        <summary>
+          Mevcut müşteri listemi aktarabilir miyim?
+          <span class="faq-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </summary>
+        <p class="faq-answer">Excel veya benzer formattaki mevcut listelerinizi sisteme aktarabiliyoruz. Geçiş sürecini birlikte yönetiyoruz; veri kaybı olmuyor.</p>
+      </details>
+      <details class="faq-item reveal d3">
+        <summary>
+          Fiyatlandırma nasıl işliyor?
+          <span class="faq-chevron" aria-hidden="true"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        </summary>
+        <p class="faq-answer">Tek seferlik kurulum ücreti ve yıllık lisans şeklinde çalışıyor. İşletmenizin büyüklüğüne göre fiyat netleşir — <a href="#iletisim">iletişime geçin</a>, birlikte konuşalım.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section" aria-labelledby="cta-h2">
+  <div class="cta-glow" aria-hidden="true"></div>
+  <h2 class="reveal" id="cta-h2">
+    Kendi paneliniz,<br><span class="hl">kendi alan adınızda.</span>
+  </h2>
+  <p class="reveal d1">İşletmenize özel kurulum, güvenli giriş ve çok cihazlı erişim. Birlikte yapılandıralım.</p>
+  <div class="cta-actions reveal d2">
+    <a href="#iletisim" class="btn btn-primary">
+      İletişime Geç
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" aria-hidden="true">
+        <path d="M1.5 6.5h10M6.5 1.5l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </div>
+  <div class="cta-checks reveal d3">
+    <span class="cta-check"><span class="check-dot" aria-hidden="true"></span>Telefon, tablet ve bilgisayardan tek hesapla giriş</span>
+    <span class="cta-check"><span class="check-dot" aria-hidden="true"></span>Kurulum tamamlandı, aynı gün kullanıma hazır</span>
+    <span class="cta-check"><span class="check-dot" aria-hidden="true"></span>Kendi alan adınızda yayında</span>
+  </div>
+</section>
+
+<!-- ── İletişim ── -->
+<section class="contact-section reveal" id="iletisim" aria-labelledby="contact-h2">
+  <h2 class="reveal" id="contact-h2">Kendi sistemini <span class="hl">kuralım.</span></h2>
+  <p class="reveal d1">Alan adı, hosting kurulumu, kullanıcı girişleri ve fiyat bilgisi için hemen ulaş. İşletmene göre yapılandırıyoruz.</p>
+  <div class="contact-person reveal d1">
+    <img src="assets/mustafa.jpg" alt="Mustafa Yeşildağ" class="contact-avatar" onerror="this.style.display='none'">
+    <div class="contact-person-text">
+      <span class="contact-person-name">Mustafa Yeşildağ</span>
+      <span class="contact-person-role">Kurulum &amp; destek — doğrudan benimle iletişimdesin</span>
+    </div>
+  </div>
+  <div class="contact-cards reveal d2">
+    <a href="https://wa.me/905367701150" class="contact-card" target="_blank" rel="noopener">
+      <span class="contact-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      </span>
+      <div class="contact-info">
+        <span class="contact-label">WhatsApp</span>
+        <span class="contact-value">+90 536 770 11 50</span>
+      </div>
+    </a>
+    <a href="mailto:mustafayesilldag@gmail.com" class="contact-card">
+      <span class="contact-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M22 7l-10 7L2 7"/></svg>
+      </span>
+      <div class="contact-info">
+        <span class="contact-label">E-posta</span>
+        <span class="contact-value">mustafayesilldag@gmail.com</span>
+      </div>
+    </a>
+    <a href="https://www.linkedin.com/in/mustafa-ye%C5%9Filda%C4%9F-506262394/" class="contact-card" target="_blank" rel="noopener">
+      <span class="contact-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.225 0z"/></svg>
+      </span>
+      <div class="contact-info">
+        <span class="contact-label">LinkedIn</span>
+        <span class="contact-value">Mustafa Yeşildağ</span>
+      </div>
+    </a>
+    <a href="https://www.instagram.com/mustfysldg/" class="contact-card" target="_blank" rel="noopener">
+      <span class="contact-icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.42.56.21.96.47 1.38.89.42.42.68.82.89 1.38.17.43.37 1.06.42 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.42 2.23-.21.56-.47.96-.89 1.38-.42.42-.82.68-1.38.89-.43.17-1.06.37-2.23.42-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.42-.56-.21-.96-.47-1.38-.89-.42-.42-.68-.82-.89-1.38-.17-.43-.37-1.06-.42-2.23C2.18 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.42-2.23.21-.56.47-.96.89-1.38.42-.42.82-.68 1.38-.89.43-.17 1.06-.37 2.23-.42C8.42 2.18 8.8 2.16 12 2.16M12 0C8.74 0 8.33.01 7.05.07 5.78.13 4.9.33 4.14.63c-.79.31-1.46.72-2.13 1.38C1.35 2.68.94 3.35.63 4.14.33 4.9.13 5.78.07 7.05.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.15.56 2.91.31.79.72 1.46 1.38 2.13.67.66 1.34 1.07 2.13 1.38.76.3 1.64.5 2.91.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.15-.26 2.91-.56.79-.31 1.46-.72 2.13-1.38.66-.67 1.07-1.34 1.38-2.13.3-.76.5-1.64.56-2.91.06-1.28.07-1.69.07-4.95s-.01-3.67-.07-4.95c-.06-1.27-.26-2.15-.56-2.91-.31-.79-.72-1.46-1.38-2.13-.67-.66-1.34-1.07-2.13-1.38-.76-.3-1.64-.5-2.91-.56C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1018.16 12 6.16 6.16 0 0012 5.84zM12 16a4 4 0 114-4 4 4 0 01-4 4zm6.41-10.85a1.44 1.44 0 101.44 1.44 1.44 1.44 0 00-1.44-1.44z"/></svg>
+      </span>
+      <div class="contact-info">
+        <span class="contact-label">Instagram</span>
+        <span class="contact-value">@mustfysldg</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <strong>TrackDesk</strong> &nbsp;·&nbsp; Satış ve Tahsilat Paneli &nbsp;·&nbsp; Bulut tabanlı, çok cihazlı, güvenli
+</footer>
+
+<script>
+  // Scroll reveal via IntersectionObserver
+  const revealEls = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    revealEls.forEach(el => io.observe(el));
+  } else {
+    revealEls.forEach(el => el.classList.add('visible'));
+  }
+
+  // İframe yükleme spinner'ını gizle
+  document.querySelectorAll('.device-frame iframe').forEach(iframe => {
+    const loader = iframe.parentElement.querySelector('.iframe-loader');
+    if (!loader) return;
+    iframe.addEventListener('load', () => loader.classList.add('loaded'));
+  });
+
+  // Spot glow: .pcard ve .device-frame üzerinde fareyi takip eden ışık.
+  // Sadece gerçek imleçli/hover destekleyen cihazlarda ve hareket azaltma
+  // tercihi kapalıyken çalışır — dokunmatik cihazlarda hiç DOM'a eklenmez.
+  (function initSpotGlow() {
+    const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!supportsHover || reducedMotion) return;
+
+    document.querySelectorAll('.pcard, .device-frame').forEach((el) => {
+      const spot = document.createElement('span');
+      spot.className = 'spot-glow';
+      spot.setAttribute('aria-hidden', 'true');
+      el.prepend(spot);
+      el.addEventListener('mousemove', (event) => {
+        const rect = el.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 100;
+        const y = ((event.clientY - rect.top) / rect.height) * 100;
+        el.style.setProperty('--spot-x', x + '%');
+        el.style.setProperty('--spot-y', y + '%');
+      });
+    });
+  })();
+
+  // İletişim bölümü göründüğünde mobil sticky CTA'yı gizle (zaten oradalar)
+  const ctaBar = document.querySelector('#mobile-cta');
+  const contactSec = document.querySelector('#iletisim');
+  if (ctaBar && contactSec && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => {
+      ctaBar.classList.toggle('hidden', entries[0].isIntersecting);
+    }, { threshold: 0.25 }).observe(contactSec);
+  }
+</script>
+</body>
+</html>

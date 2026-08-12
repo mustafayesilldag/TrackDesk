@@ -1,0 +1,19 @@
+{
+  "name": "TrackDesk",
+  "short_name": "TrackDesk",
+  "description": "İş Takip Paneli — sipariş, tahsilat ve müşteri yönetimi.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1D4ED8",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
