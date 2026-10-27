@@ -190,6 +190,40 @@ const ES_ICONS = {
   box:         `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>`,
 };
 
+// Tarayıcının düz "localhost diyor ki" kutusu yerine panelin kendi onay penceresi.
+// Dialog'un "close" olayına güvenilmez (bazı gömülü tarayıcılarda tetiklenmiyor);
+// cevap doğrudan buton tıklaması ve Esc tuşundan alınır.
+function confirmAction(message, { confirmLabel = "Evet, sil" } = {}) {
+  const dialog = document.querySelector("#confirm-dialog");
+  if (!dialog?.showModal) return Promise.resolve(window.confirm(message));
+  const acceptButton = dialog.querySelector("#confirm-dialog-accept");
+  const cancelButton = dialog.querySelector("#confirm-dialog-cancel");
+  dialog.querySelector("#confirm-dialog-message").textContent = message;
+  acceptButton.textContent = confirmLabel;
+
+  return new Promise((resolve) => {
+    const finish = (approved) => {
+      acceptButton.removeEventListener("click", onAccept);
+      cancelButton.removeEventListener("click", onCancel);
+      dialog.removeEventListener("keydown", onKeydown);
+      if (dialog.open) dialog.close();
+      resolve(approved);
+    };
+    const onAccept = () => finish(true);
+    const onCancel = () => finish(false);
+    const onKeydown = (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      finish(false);
+    };
+    acceptButton.addEventListener("click", onAccept);
+    cancelButton.addEventListener("click", onCancel);
+    dialog.addEventListener("keydown", onKeydown);
+    dialog.showModal();
+    cancelButton.focus();
+  });
+}
+
 function makeEmptyState(icon, title, hint) {
   return `<div class="empty-state"><span class="empty-icon" aria-hidden="true">${icon}</span><span class="empty-title">${title}</span>${hint ? `<span class="empty-hint">${hint}</span>` : ''}</div>`;
 }
@@ -301,7 +335,7 @@ function getCollectionTotal(collections) {
   return (Array.isArray(collections) ? collections : []).reduce((sum, collection) => sum + (Number(collection.amount) || 0), 0);
 }
 
-function reconcileCollections(existingCollections, desiredTotal, movementDate, noteText = "Düzenleme tahsilat farki") {
+function reconcileCollections(existingCollections, desiredTotal, movementDate, noteText = "Düzenleme tahsilat farkı") {
   const normalizedExisting = normalizeCollections(existingCollections, 0, movementDate).map((collection) => ({ ...collection }));
   const safeDesiredTotal = Math.max(Number(desiredTotal) || 0, 0);
   const currentTotal = getCollectionTotal(normalizedExisting);
@@ -871,7 +905,7 @@ function getCatalogProductMeta(productLabel) {
 
 async function apiRequest(endpoint, { method = "GET", data, query } = {}) {
   if (!isApiEnabled()) {
-    throw new Error("Paneli localhost veya yayinlanmis domain uzerinden acman gerekiyor.");
+    throw new Error("Paneli localhost veya yayınlanmış alan adı üzerinden açman gerekiyor.");
   }
 
   const url = new URL(endpoint, API_BASE_URL);
@@ -1075,7 +1109,7 @@ async function reloadStateFromApi({ silent = false } = {}) {
     render();
     setSyncStatus("ok");
   } catch (error) {
-    console.error("API senkronizasyonu basarisiz oldu.", error);
+    console.error("API senkronizasyonu başarısız oldu.", error);
     setSyncStatus("error");
     if (!silent) {
       showToast(error.message || "Veriler sunucudan yüklenemedi.", "error");
@@ -1177,7 +1211,7 @@ function getPaymentReminderMeta(transaction, referenceDate = TODAY) {
 
   if (transaction.paymentDueDate < referenceDate) {
     return {
-      text: `Vadesi gecti: ${formatDate(transaction.paymentDueDate)}`,
+      text: `Vadesi geçti: ${formatDate(transaction.paymentDueDate)}`,
       className: "overdue",
     };
   }
@@ -1302,11 +1336,11 @@ function createProductRowMarkup(scope, item = { product: "", quantity: "" }) {
         </select>
       </label>
       <label>
-        <span>1 koli/adet fiyatı</span>
+        <span>Birim fiyat</span>
         <input class="product-price" data-role="product-price" type="number" min="0" step="0.01" placeholder="0" value="${item.unitPrice || ""}" required>
       </label>
       <label>
-        <span>Adet / Koli</span>
+        <span>Adet</span>
         <input class="product-qty" data-role="product-qty" type="number" min="1" step="1" placeholder="0" value="${item.quantity || ""}" required>
       </label>
       <button type="button" class="ghost small-button remove-product-row" data-role="remove-product-row">Sil</button>
@@ -1525,8 +1559,24 @@ function getLatestTransactionDate(transactions) {
     .sort((a, b) => b.localeCompare(a))[0] || TODAY;
 }
 
+// İleri tarihli (planlı) kayıtlar "bugün" referansını geleceğe kaydırmasın.
+function getLatestPastTransactionDate(transactions) {
+  return getLatestTransactionDate(transactions.filter((transaction) => transaction.date && transaction.date <= TODAY));
+}
+
+// Sabit yıl listesi her yılbaşında eskiyordu: geçen yıl/bu yıl/gelecek yıl +
+// veride geçen tüm yıllar.
 function getAvailableSummaryYears() {
-  return ["2025", "2026", "2027"];
+  const currentYear = Number(TODAY.slice(0, 4));
+  const years = new Set([currentYear - 1, currentYear, currentYear + 1].map(String));
+  state.customers.forEach((customer) => {
+    customer.transactions.forEach((transaction) => years.add(String(transaction.date || "").slice(0, 4)));
+    (customer.rollovers || []).forEach((rollover) => {
+      years.add(rollover.sourceYear);
+      years.add(rollover.targetYear);
+    });
+  });
+  return [...years].filter((year) => /^\d{4}$/.test(year)).sort();
 }
 
 function populateSummaryYearFilter(transactions) {
@@ -1602,7 +1652,9 @@ function getCustomerLedgerSummary(customer) {
     (sum, rollover) => sum + getRolloverRemaining(rollover),
     0
   );
-  const openBalance = Math.max(Math.max(totalSales - totalCollections, 0) + rolloverBalance, 0);
+  // Devir tutarı satışlara dahil değil ve devir tahsilatı zaten rolloverBalance'ı
+  // düşürüyor; satışlardan bir kez daha düşülürse aynı ödeme iki kez sayılır.
+  const openBalance = Math.max(Math.max(totalSales - transactionCollections, 0) + rolloverBalance, 0);
   const unpaidTransactions = allTransactions.filter((transaction) => transaction.amount > transaction.paid).length;
 
   return {
@@ -1698,7 +1750,7 @@ function getOperationalInsights() {
       { label: "Geciken Açık İşlem", value: String(overdueTransactions.length), tone: "overdue" },
       { label: "Bugün Vadesi Gelen", value: String(dueTodayTransactions.length), tone: "warning" },
       { label: "Bugün Takip Edilecek", value: String(todayTransactions.length), tone: "normal" },
-      { label: "İleri Tarihli Sipariş", value: String(futureTransactions.length), tone: "normal" },
+      { label: "İleri Tarihli İşlem", value: String(futureTransactions.length), tone: "normal" },
       { label: "Teslim Edildi / Para Bekliyor", value: String(deliveredAwaitingPayment.length), tone: "warning" },
     ],
     topDebtors,
@@ -1879,7 +1931,7 @@ function isCarryOverOpenTransaction(transaction) {
 
 function getFilteredGlobalTransactions(period) {
   const allTransactions = getAllSummaryEntries();
-  const referenceDate = getLatestTransactionDate(allTransactions);
+  const referenceDate = getLatestPastTransactionDate(allTransactions);
 
   if (period === "today") {
     return allTransactions.filter((transaction) => transaction.date === referenceDate).sort(compareTransactionsDesc);
@@ -1891,8 +1943,8 @@ function getFilteredGlobalTransactions(period) {
 function renderPeriodCards(summary, referenceDate = TODAY) {
   const referenceLabel = formatDate(referenceDate);
   const labels = {
-    today: `Gun (${referenceLabel})`,
-    week: "Haftalik",
+    today: `Gün (${referenceLabel})`,
+    week: "Haftalık",
     year: `Yıl (${String(referenceDate).slice(0, 4)})`,
   };
 
@@ -1914,8 +1966,10 @@ function renderSummary() {
   const transactions = getAllSummaryEntries();
   populateSummaryYearFilter(transactions);
   const filteredTransactions = getTransactionsForSummaryYear(transactions, activeSummaryYear);
-  const referenceDate =
-    filteredTransactions.length > 0
+  const hasPastEntries = filteredTransactions.some((transaction) => transaction.date <= TODAY);
+  const referenceDate = hasPastEntries
+    ? getLatestPastTransactionDate(filteredTransactions)
+    : filteredTransactions.length > 0
       ? getLatestTransactionDate(filteredTransactions)
       : `${activeSummaryYear}-12-31`;
   summaryCards.innerHTML = renderPeriodCards(getPeriodSummary(filteredTransactions, referenceDate), referenceDate);
@@ -2033,13 +2087,14 @@ async function applyRolloverCollection(rolloverId, amountValue, dateValue, noteV
   persist();
   render();
   rolloverCollectionDialog.close();
+  showToast(`${formatCurrency(amount)} devir tahsilatı kaydedildi.`, "success");
 }
 
 async function deleteRollover(rolloverId) {
   const customer = getCustomerById(selectedCustomerId);
   if (!customer) return;
 
-  const approved = window.confirm("Bu devir kaydını silmek istiyor musun?");
+  const approved = await confirmAction("Bu devir kaydını silmek istiyor musun?");
   if (!approved) return;
 
   if (isApiEnabled()) {
@@ -2171,7 +2226,7 @@ function renderClosedRolloverList(customer) {
 function stageMeta(transaction) {
   if (transaction.stage === "delivered") {
     return {
-      text: transaction.fullyPaid ? "Teslim edildi / Kapandi" : "Teslim edildi",
+      text: transaction.fullyPaid ? "Teslim edildi / Kapandı" : "Teslim edildi",
       className: transaction.fullyPaid ? "closed" : "delivered",
     };
   }
@@ -2180,7 +2235,7 @@ function stageMeta(transaction) {
     return { text: "Düzenleniyor", className: "editing" };
   }
 
-  return { text: "İşlem alindi", className: "pending" };
+  return { text: "İşlem alındı", className: "pending" };
 }
 
 function renderTransactionCards(transactions, options = {}) {
@@ -2238,7 +2293,7 @@ function renderTransactionCards(transactions, options = {}) {
           </div>
           <div class="meta-row">
             <span>Toplam: ${formatCurrency(transaction.amount)}</span>
-            <span>Alinan: ${formatCurrency(transaction.paid)}</span>
+            <span>Alınan: ${formatCurrency(transaction.paid)}</span>
             <span>Kalan: ${formatCurrency(remaining)}</span>
           </div>
           ${transaction.note ? `<div class="meta-row"><span>Not: ${transaction.note}</span></div>` : ""}
@@ -2350,7 +2405,7 @@ function renderCatalogManager() {
         <article class="catalog-brand">
           <div class="section-head compact">
             <strong>${group.brand}</strong>
-            <button type="button" class="danger small-button" data-action="delete-brand" data-brand="${group.brand}">Markayi Sil</button>
+            <button type="button" class="danger small-button" data-action="delete-brand" data-brand="${group.brand}">Markayı Sil</button>
           </div>
           <div class="catalog-product-list">
             ${group.products
@@ -2382,10 +2437,10 @@ function renderDailyOperationsBoard() {
     dailyOperationsList.className = "history-list scroll-list empty-state";
     const [esIcon, esTitle, esHint] =
       activeDailyFilter === "today"
-        ? [ES_ICONS.clipboard, 'Bugün kayıt yok', 'Hızlı Ekle formundan sipariş gir veya müşteri seçerek işlem ekle.']
+        ? [ES_ICONS.clipboard, 'Bugün kayıt yok', 'Yeni İşlem formundan ekle; kaydettiğin anda burada görünür.']
         : activeDailyFilter === "yesterday"
-          ? [ES_ICONS.clipboard, 'Dün kayıt yok', 'Dünkü siparişler ve tahsilatlar burada görünür.']
-          : [ES_ICONS.calendar, 'Planlı sipariş yok', 'İşlem tarihi ileri alınan siparişler burada görünür.'];
+          ? [ES_ICONS.clipboard, 'Dün kayıt yok', 'Dünkü işlemler ve tahsilatlar burada görünür.']
+          : [ES_ICONS.calendar, 'Planlı işlem yok', 'Tarihi ileriye alınan işlemler burada görünür.'];
     dailyOperationsList.innerHTML = makeEmptyState(esIcon, esTitle, esHint);
     return;
   }
@@ -2402,7 +2457,7 @@ function renderDailyOperationsBoard() {
       ? `
         <div class="history-group-title">${
           activeDailyFilter === "upcoming"
-            ? "Tüm ileri tarihli siparişler"
+            ? "Tüm ileri tarihli işlemler"
             : "Günlük işlem kayıtları"
         }</div>
         ${renderTransactionCards(operations, { showCustomer: true })}
@@ -2499,7 +2554,7 @@ function renderCustomers() {
         <button class="customer-item ${customer.id === selectedCustomerId ? "active" : ""}" data-id="${customer.id}" style="--i:${index}">
           <div class="customer-row-main">
             <strong>${customer.name}</strong>
-            <span class="pill">${openCarryOverCount} açık</span>
+            ${openCarryOverCount > 0 ? `<span class="pill">${openCarryOverCount} açık</span>` : `<span class="pill pill-closed">Açık yok</span>`}
           </div>
           <div class="customer-row-meta">
             <span class="customer-meta-text">${getCustomerMetaText(customer)}</span>
@@ -2539,7 +2594,7 @@ function renderDetail() {
   }
 
   const summaryEntries = getCustomerSummaryEntries(customer);
-  const referenceDate = getLatestTransactionDate(summaryEntries);
+  const referenceDate = getLatestPastTransactionDate(summaryEntries);
   const periodSummary = getPeriodSummary(summaryEntries, referenceDate);
   const ledger = getCustomerLedgerSummary(customer);
   const rolloverSummary = getCustomerRolloverSummary(customer, activeSummaryYear);
@@ -2583,15 +2638,15 @@ function renderDetail() {
       <div class="amount">${formatCurrency(ledger.openBalance)}</div>
     </div>
     <div class="overview-card">
-      <div class="muted">Açık İşlem Sayisi</div>
+      <div class="muted">Açık İşlem Sayısı</div>
       <div class="amount">${ledger.unpaidTransactions}</div>
     </div>
     <div class="overview-card">
-      <div class="muted">${activeSummaryYear} Icine Devredilen Bakiye</div>
+      <div class="muted">${activeSummaryYear} İçine Devredilen Bakiye</div>
       <div class="amount">${formatCurrency(rolloverSummary.incomingAmount)}</div>
     </div>
     <div class="overview-card">
-      <div class="muted">${activeSummaryYear} Icinden Devredilen Bakiye</div>
+      <div class="muted">${activeSummaryYear} İçinden Devredilen Bakiye</div>
       <div class="amount">${formatCurrency(rolloverSummary.outgoingAmount)}</div>
     </div>
     <div class="overview-card">
@@ -2623,7 +2678,7 @@ function renderDetail() {
 
   futureTransactionList.innerHTML = futureTransactions.length
     ? renderTransactionCards(futureTransactions)
-    : makeEmptyState(ES_ICONS.calendar, 'Planlı sipariş yok', 'İşlem tarihi bugünden ileriye alınan siparişler burada görünür.');
+    : makeEmptyState(ES_ICONS.calendar, 'Planlı işlem yok', 'Tarihi bugünden ileriye alınan işlemler burada görünür.');
 
   transactionList.innerHTML = carryOverTransactions.length
     ? renderTransactionCards(carryOverTransactions)
@@ -2656,16 +2711,20 @@ function formatMoneyShort(value) {
 function renderOzet() {
   if (!ozetTable) return;
   const query = (ozetSearch?.value || "").trim().toLocaleLowerCase("tr-TR");
+  const monthPrefix = TODAY.slice(0, 7);
 
   const rows = [...state.customers]
     .sort((a, b) => a.name.localeCompare(b.name, "tr"))
     .map((customer) => {
       const openBalance = Math.max(getCustomerLedgerSummary(customer).openBalance, 0);
+      const monthDebt = customer.transactions
+        .filter((transaction) => String(transaction.date || "").startsWith(monthPrefix))
+        .reduce((sum, transaction) => sum + getTransactionRemaining(transaction), 0);
       return {
         id: customer.id,
         name: customer.name,
-        monthDebt: openBalance,
-        yearDebt: openBalance,
+        monthDebt,
+        totalDebt: openBalance,
       };
     })
     .filter((row) => !query || row.name.toLocaleLowerCase("tr-TR").includes(query));
@@ -2683,7 +2742,7 @@ function renderOzet() {
         <tr>
           <td class="ozet-col-name"><button type="button" class="ozet-name-link" data-ozet-pdf="${row.id}">${escapeHtml(row.name)}</button></td>
           <td class="ozet-col-num">${formatMoneyShort(row.monthDebt)}</td>
-          <td class="ozet-col-num">${formatMoneyShort(row.yearDebt)}</td>
+          <td class="ozet-col-num">${formatMoneyShort(row.totalDebt)}</td>
           <td class="ozet-col-action">
             <button type="button" class="primary small-button ozet-islem-button" data-ozet-islem="${row.id}">İşlem Yap</button>
           </td>
@@ -2740,7 +2799,7 @@ function importBackupFile(file) {
   reader.onload = async () => {
     try {
       const parsed = JSON.parse(String(reader.result || "{}"));
-      const approved = window.confirm("Mevcut kayıtlar yedekten gelen verilerle değişsin mi?");
+      const approved = await confirmAction("Mevcut kayıtlar yedekten gelen verilerle değişsin mi?", { confirmLabel: "Evet, değiştir" });
       if (!approved) return;
 
       if (isApiEnabled()) {
@@ -2819,7 +2878,7 @@ function openTransactionDialog(transactionId = null) {
   if (!transaction) return;
 
   dialogTitle.textContent = `${customer.name} için işlem düzenle`;
-  saveTransactionButton.textContent = "Degisiklikleri Kaydet";
+  saveTransactionButton.textContent = "Değişiklikleri Kaydet";
   transactionIdInput.value = transaction.id;
   transactionDateInput.value = transaction.date;
   dialogDateChip.textContent = `İşlem günü: ${formatDate(transaction.date)}`;
@@ -2959,6 +3018,7 @@ async function applyCollection(transactionId, amountToCollect, noteText) {
     }
     await reloadStateFromApi({ silent: true });
     collectionDialog.close();
+    showToast(`${formatCurrency(collectAmount)} tahsil edildi.`, "success");
     return;
   }
 
@@ -2974,6 +3034,7 @@ async function applyCollection(transactionId, amountToCollect, noteText) {
   persist();
   render();
   collectionDialog.close();
+  showToast(`${formatCurrency(collectAmount)} tahsil edildi.`, "success");
 }
 
 async function markTransactionDeliveredWithoutPayment(transactionId) {
@@ -3011,7 +3072,7 @@ async function deleteSelectedCustomer() {
   const customer = getCustomerById(selectedCustomerId);
   if (!customer) return;
 
-  const approved = window.confirm(`${customer.name} kaydını silmek istiyor musun? Bu işlem geri alınmaz.`);
+  const approved = await confirmAction(`${customer.name} kaydını silmek istiyor musun? Bu işlem geri alınmaz.`);
   if (!approved) return;
 
   if (isApiEnabled()) {
@@ -3030,7 +3091,7 @@ async function deleteSelectedCustomer() {
 }
 
 async function deleteCollection(collectionId, collectionType) {
-  const approved = window.confirm("Bu tahsilat kaydını silmek istiyor musun? Bu işlem geri alınmaz.");
+  const approved = await confirmAction("Bu tahsilat kaydını silmek istiyor musun? Bu işlem geri alınmaz.");
   if (!approved) return;
 
   if (isApiEnabled()) {
@@ -3069,7 +3130,7 @@ async function deleteTransaction(transactionId) {
   const transaction = getTransactionById(customer, transactionId);
   if (!customer || !transaction) return;
 
-  const approved = window.confirm("Bu işlem kaydını silmek istiyor musun? Bu işlem geri alınmaz.");
+  const approved = await confirmAction("Bu işlem kaydını silmek istiyor musun? Bu işlem geri alınmaz.");
   if (!approved) return;
 
   if (isApiEnabled()) {
@@ -3148,7 +3209,7 @@ async function addProductToCatalog(brandName, productName) {
 }
 
 async function deleteBrand(brandName) {
-  const approved = window.confirm(`${brandName} markasını katalogdan silmek istiyor musun?`);
+  const approved = await confirmAction(`${brandName} markasını katalogdan silmek istiyor musun?`);
   if (!approved) return;
 
   if (isApiEnabled()) {
@@ -3167,7 +3228,7 @@ async function deleteBrand(brandName) {
 }
 
 async function deleteProductFromCatalog(brandName, productName) {
-  const approved = window.confirm(`${productName} ürününü silmek istiyor musun?`);
+  const approved = await confirmAction(`${productName} ürününü silmek istiyor musun?`);
   if (!approved) return;
 
   if (isApiEnabled()) {
@@ -3409,11 +3470,15 @@ function updateDialogDueDate() {
 
 quickTransactionForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const fallbackMatchedCustomer = getQuickCustomerMatches(quickCustomerSelect.value, 1)[0];
-  const customer =
-    getCustomerById(Number(quickCustomerIdInput?.value || 0)) ||
-    getCustomerByName(quickCustomerSelect.value) ||
-    fallbackMatchedCustomer;
+  // Kutu boşsa müşteri yok sayılır (boş arama tüm müşterileri döndürüp ilkini
+  // sessizce seçiyordu). ID'ler UUID olabilir → Number()'a çevrilmez.
+  const typedCustomer = quickCustomerSelect.value.trim();
+  const idMatchedCustomer = getCustomerById(quickCustomerIdInput?.value);
+  const customer = typedCustomer
+    ? (idMatchedCustomer?.name === typedCustomer ? idMatchedCustomer : null) ||
+      getCustomerByName(typedCustomer) ||
+      getQuickCustomerMatches(typedCustomer, 1)[0]
+    : null;
   if (!customer) {
     showToast("Listeden geçerli bir müşteri seçmelisin.", "warning");
     const pickerEl = document.querySelector('.quick-customer-picker');
@@ -3423,6 +3488,9 @@ quickTransactionForm.addEventListener("submit", async (event) => {
     return;
   }
   setQuickCustomer(customer, { syncSelectedCustomer: true });
+  // Form novalidate: müşteri uyarısı önce gelsin, ürün alanları sonra denetlensin
+  // (müşteri kutusu salt okunur olduğu için tarayıcı onu hiç denetlemiyordu).
+  if (!quickTransactionForm.reportValidity()) return;
   const items = getSelectedQuickItems();
   if (!items.length) {
     showToast("En az bir ürün seçip adet girmelisin.", "warning");
@@ -3432,7 +3500,7 @@ quickTransactionForm.addEventListener("submit", async (event) => {
   const transactionDate = quickDateInput.value || TODAY;
   const amount = Number(quickAmountInput.value) || 0;
   const paid = Number(quickPaidInput.value) || 0;
-  const collections = paid > 0 ? [{ date: transactionDate, amount: paid, note: "Hızlı giris pesinat" }] : [];
+  const collections = paid > 0 ? [{ date: transactionDate, amount: paid, note: "Hızlı girişte peşinat" }] : [];
   const paymentDueDate = getEffectivePaymentDueDate(
     transactionDate,
     quickPaymentPlanSelect.value,
@@ -3462,6 +3530,7 @@ quickTransactionForm.addEventListener("submit", async (event) => {
     quickAmountInput.value = "";
     quickPaidInput.value = "0";
     setQuickCustomer(customer);
+    showToast(`${customer.name} için ${formatCurrency(amount)} tutarında işlem eklendi.`, "success");
   } catch (error) {
     showToast(error.message || "İşlem kaydedilemedi.", "error");
   }
@@ -3525,6 +3594,11 @@ customerList.addEventListener("click", (event) => {
   selectedCustomerId = button.dataset.id;
   rememberRecentCustomer(selectedCustomerId);
   render();
+  // Telefonda detay listenin altında kalıyor: seçince detaya kaydır.
+  if (window.matchMedia("(max-width: 980px)").matches) {
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    detailName.closest(".card")?.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth", block: "start" });
+  }
 });
 
 debtWatchList?.addEventListener("click", (event) => {
@@ -3718,6 +3792,7 @@ markDeliveredWithoutPaymentButton?.addEventListener("click", async () => {
   try {
     await markTransactionDeliveredWithoutPayment(collectionTransactionIdInput.value);
     render();
+    showToast("Teslim edildi olarak işaretlendi, ödeme açık kaldı.", "success");
   } catch (error) {
     showToast(error.message || "Teslim bilgisi kaydedilemedi.", "error");
   }
@@ -3748,8 +3823,8 @@ brandLogoInput?.addEventListener("change", async () => {
 brandLogoRemoveButton?.addEventListener("click", () => {
   updateBrandSettings({ logoDataUrl: null });
 });
-brandResetButton?.addEventListener("click", () => {
-  const approved = window.confirm("İşletme adı ve logo varsayılana dönsün mü?");
+brandResetButton?.addEventListener("click", async () => {
+  const approved = await confirmAction("İşletme adı ve logo varsayılana dönsün mü?", { confirmLabel: "Evet, sıfırla" });
   if (!approved) return;
   clearBrandSettings();
   applyBrandSettings();
@@ -4146,6 +4221,7 @@ transactionForm.addEventListener("submit", async (event) => {
 
     render();
     transactionDialog.close();
+    showToast("İşlem kaydedildi.", "success");
   } catch (error) {
     showToast(error.message || "İşlem kaydedilemedi.", "error");
   }
@@ -4246,6 +4322,7 @@ rolloverForm?.addEventListener("submit", async (event) => {
     persist();
     render();
     rolloverDialog.close();
+    showToast("Devir kaydı kaydedildi.", "success");
   } catch (error) {
     showToast(error.message || "Devir kaydı kaydedilemedi.", "error");
   }

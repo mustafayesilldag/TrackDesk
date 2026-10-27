@@ -4,9 +4,16 @@
      gerçek yüzey. --text/--muted/--ok/--warn/--danger zaten AA-doğrulanmış
      eski aydınlık tema değerleri, aynen taşındı (yeniden ölçmeye gerek yok). */
   --bg: oklch(90% 0.025 264);
-  --panel: oklch(98% 0.008 264);
+  --panel: #ffffff;
   --panel-strong: #ffffff;
-  --line: rgba(29, 78, 216, 0.33);
+  /* Katman sistemi: sayfa zemini (--bg) → beyaz kart (--panel) → kart içi
+     yumuşak karo (--tile) → karo içinde tekrar beyaz. Ayrım çizgiyle değil
+     ton farkıyla yapılır; çizgiler sadece giriş alanları ve satır ayırıcılarda. */
+  --tile: oklch(97.2% 0.012 264);
+  --tile-hover: oklch(95% 0.024 264);
+  --line: rgba(29, 78, 216, 0.13);
+  --line-soft: rgba(29, 78, 216, 0.07);
+  --line-strong: rgba(29, 78, 216, 0.24);
   --text: #1e1b4b;
   --muted: #565d6b;
   --accent: #1D4ED8;
@@ -15,7 +22,8 @@
   --ok: oklch(39% 0.18 152);
   --warn: oklch(40% 0.14 63);
   --danger: oklch(39% 0.22 15);
-  --shadow: 0 4px 24px rgba(29, 78, 216, 0.14), 0 1px 4px rgba(29, 78, 216, 0.07);
+  --shadow: 0 1px 2px rgba(30, 27, 75, 0.04), 0 8px 28px rgba(29, 78, 216, 0.09);
+  --shadow-sm: 0 1px 2px rgba(30, 27, 75, 0.04), 0 3px 12px rgba(29, 78, 216, 0.07);
   --hover-glow-sm: 0 4px 14px rgba(29, 78, 216, 0.18);
   --hover-glow-md: 0 6px 18px rgba(29, 78, 216, 0.22);
   --hover-glow-lg: 0 14px 32px rgba(29, 78, 216, 0.18);
@@ -29,10 +37,19 @@
   box-sizing: border-box;
 }
 
+/* Sınıflara verilen display değerleri (inline-flex vb.) hidden attribute'unu
+   ezmesin — topbar'daki gizli rozetler bu yüzden görünüyordu. */
+[hidden] {
+  display: none !important;
+}
+
+/* clip, hidden'dan farklı olarak scroll container oluşturmaz → içerideki
+   position: sticky öğeler (topbar, mobil kaydet butonu) çalışmaya devam eder. */
 html {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 body {
@@ -41,6 +58,9 @@ body {
   max-width: 100%;
   min-height: 100vh;
   overflow-x: hidden;
+  overflow-x: clip;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
   color: var(--text);
   background:
     radial-gradient(circle at top left, rgba(29, 78, 216, 0.16), transparent 32%),
@@ -68,14 +88,10 @@ textarea {
 
 .card {
   background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 24px;
+  border: 1px solid var(--line-soft);
+  border-radius: 22px;
   box-shadow: var(--shadow);
-}
-
-
-.card {
-  padding: 20px;
+  padding: 22px;
 }
 
 .stack,
@@ -92,21 +108,29 @@ textarea {
   gap: 24px;
 }
 
+/* .hero artık kendi kutusu olan bir kart değil, sayfa başlığı + içerik
+   sarmalayıcısı. İçindeki kartlar tek katman olarak sayfa zemininde durur
+   (kart içinde kart içinde kart yerine). */
 .hero {
   display: flex;
   justify-content: space-between;
-  gap: 24px;
+  gap: 18px;
   align-items: flex-start;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 242, 255, 0.95));
-  border: 1px solid var(--line);
-  border-radius: 28px;
-  padding: 28px;
-  box-shadow: var(--shadow);
 }
 
 .operations-hero {
   display: flex;
   flex-direction: column;
+}
+
+.operations-intro {
+  padding: 2px 4px 0;
+}
+
+.operations-intro h2 {
+  font-size: clamp(1.35rem, 1.05rem + 1vw, 1.8rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .operations-grid {
@@ -140,9 +164,12 @@ textarea {
   margin-bottom: 12px;
 }
 
+/* Liste kartın kalan yüksekliğini doldurur (yandaki form kadar), fazlası
+   kendi içinde kayar; .scroll-list'in 340px sınırı burada geçerli değil. */
 .daily-board-card #daily-operations-list {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 420px;
+  max-height: none;
 }
 
 .hero-stats,
@@ -155,10 +182,35 @@ textarea {
 
 .stat-card,
 .overview-card {
-  background: var(--panel-strong);
-  border-radius: 18px;
+  background: var(--tile);
+  border-radius: 16px;
   padding: 16px;
-  border: 1px solid var(--line);
+  border: 0;
+  min-width: 0;
+}
+
+.overview-card .amount {
+  font-size: 1.15rem;
+  line-height: 1.3;
+  margin-top: 4px;
+  overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card .muted,
+.overview-card .muted {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Operasyon ekranının iki ana kartı: sayfa zemininde duran birinci katman. */
+.quick-entry-card,
+.daily-board-card {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: var(--shadow);
 }
 
 .period-card {
@@ -186,10 +238,12 @@ textarea {
   color: var(--text);
 }
 
+/* minmax(0, 1fr): sağ sütundaki yatay kaydırmalı paneller min-content'iyle
+   sol listeyi en dar haline ezmesin. */
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 360px) 1fr;
-  gap: 24px;
+  grid-template-columns: minmax(300px, 350px) minmax(0, 1fr);
+  gap: 20px;
 }
 
 .left-column {
@@ -238,9 +292,9 @@ textarea {
   max-width: 100%;
   min-width: 0;
   height: 560px;
-  padding: 20px;
-  border: 1px solid var(--line);
-  border-radius: 24px;
+  padding: 22px;
+  border: 1px solid var(--line-soft);
+  border-radius: 22px;
   background: var(--panel);
   box-shadow: var(--shadow);
   scroll-snap-align: start;
@@ -302,9 +356,9 @@ textarea {
   min-width: 0;
   height: 420px;
   padding: 16px;
-  border: 1px solid rgba(29, 78, 216, 0.18);
-  border-radius: 20px;
-  background: rgba(29, 78, 216, 0.04);
+  border: 0;
+  border-radius: 18px;
+  background: var(--tile);
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
@@ -323,6 +377,12 @@ textarea {
 
 .ledger-detail-slide .history-list.empty-state {
   min-height: 0;
+}
+
+/* Yumuşak karo içindeki öğeler tekrar beyaz — ton sırası korunur. */
+.ledger-detail-slide .history-item,
+.ledger-detail-slide .empty-state {
+  background: var(--panel);
 }
 
 .ledger-detail-track::-webkit-scrollbar {
@@ -351,8 +411,19 @@ textarea {
   padding: 0;
   border: none;
   border-radius: 999px;
-  background: var(--line);
+  background: var(--line-strong);
   cursor: pointer;
+}
+
+/* Nokta 7px görünür ama parmakla basılabilsin diye görünmez geniş alan. */
+.track-dot {
+  position: relative;
+}
+
+.track-dot::after {
+  content: "";
+  position: absolute;
+  inset: -12px -6px;
 }
 
 .track-dot:hover {
@@ -366,16 +437,16 @@ textarea {
 
 @media (hover: none) {
   .track-dot:hover {
-    background: var(--line);
+    background: var(--line-strong);
   }
 }
 
 .customer-item,
 .transaction-item,
 .history-item {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel-strong);
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: var(--tile);
 }
 
 .customer-item {
@@ -454,14 +525,16 @@ textarea {
 }
 
 .customer-list-card .customer-item:hover {
-  background: oklch(93% 0.06 264);
+  background: var(--tile-hover);
   border-bottom-color: transparent;
   border-radius: 10px;
   transform: none;
+  box-shadow: none;
 }
 
 .customer-list-card .customer-item.active {
-  background: oklch(91% 0.08 264);
+  background: oklch(93% 0.05 264);
+  box-shadow: none;
   border-bottom-color: transparent;
   border-radius: 10px;
   transform: none;
@@ -487,8 +560,21 @@ textarea {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
+}
+
+.section-head h2 {
+  font-size: 1.22rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.section-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: -0.005em;
 }
 
 .header-actions {
@@ -555,12 +641,19 @@ input,
 select,
 textarea {
   width: 100%;
-  border: 1px solid var(--line);
+  min-height: 48px;
+  border: 1px solid var(--line-strong);
   border-radius: 14px;
-  padding: 13px 14px;
-  background: rgba(29, 78, 216, 0.05);
+  padding: 12px 14px;
+  background: var(--panel);
   color: var(--text);
-  transition: border-color 0.18s;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+input:hover:not(:focus):not(:disabled),
+select:hover:not(:focus):not(:disabled),
+textarea:hover:not(:focus):not(:disabled) {
+  border-color: rgba(29, 78, 216, 0.4);
 }
 
 input:focus,
@@ -568,8 +661,18 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--accent);
-  background: rgba(29, 78, 216, 0.07);
-  box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1);
+  background: var(--panel);
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.12);
+}
+
+/* Otomatik hesaplanan toplam: düzenlenemez, sonuç gibi okunsun. */
+#quick-amount,
+#transaction-amount {
+  background: var(--tile);
+  border-color: transparent;
+  font-size: 1.15rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 input::placeholder {
@@ -614,45 +717,78 @@ a:focus-visible {
 
 fieldset {
   margin: 0;
-  padding: 16px;
-  border: 1px solid var(--line);
+  min-width: 0;
+  padding: 14px 16px 16px;
+  border: 0;
   border-radius: 18px;
-  background: oklch(97% 0.02 264);
+  background: var(--tile);
 }
 
+/* Çerçevesiz fieldset'te legend üst kenara yarı taşar; float ile normal
+   akışa alınıp kutunun içinde başlık satırı olur. */
 legend {
-  padding: 0 8px;
+  float: left;
+  padding: 0;
+  line-height: 44px;
   font-weight: 800;
-  color: oklch(41% 0.22 264);
+  color: var(--text);
+}
+
+fieldset > .section-head.compact {
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+fieldset > .product-row-list {
+  clear: both;
 }
 
 .primary {
-  background: linear-gradient(135deg, #1D4ED8, #1E40AF);
+  background: linear-gradient(180deg, #2563EB, #1D4ED8);
   color: #fff;
-  box-shadow: 0 4px 20px rgba(29, 78, 216, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 1px 2px rgba(30, 27, 75, 0.12), 0 6px 18px rgba(29, 78, 216, 0.26);
 }
 
 .primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 28px rgba(29, 78, 216, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 2px 4px rgba(30, 27, 75, 0.12), 0 10px 26px rgba(29, 78, 216, 0.34);
 }
 
 .danger {
-  background: linear-gradient(135deg, #f43f5e, #e11d48);
+  background: linear-gradient(180deg, #f43f5e, #e11d48);
+  color: #fff;
+}
+
+/* Liste kartlarındaki silme butonu her kartta kırmızı bağırmasın:
+   sakin kırmızı ton, üzerine gelince dolar. */
+.transaction-item .danger,
+.history-item .danger,
+.watch-item .danger,
+.catalog-brand .danger,
+.catalog-product-item .danger {
+  background: oklch(95.5% 0.03 15);
+  color: var(--danger);
+}
+
+.transaction-item .danger:hover:not(:disabled),
+.history-item .danger:hover:not(:disabled),
+.watch-item .danger:hover:not(:disabled),
+.catalog-brand .danger:hover:not(:disabled),
+.catalog-product-item .danger:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f43f5e, #e11d48);
   color: #fff;
 }
 
 .ghost {
-  background: rgba(29, 78, 216, 0.08);
-  color: var(--text);
-  border: 1px solid var(--line);
+  background: rgba(29, 78, 216, 0.07);
+  color: var(--accent-dark);
+  border: 1px solid transparent;
 }
 
 .ghost:hover:not(:disabled) {
-  background: rgba(29, 78, 216, 0.14);
-  border-color: rgba(29, 78, 216, 0.6);
-  transform: translateY(-1px) scale(1.015);
-  box-shadow: var(--hover-glow-md);
+  background: rgba(29, 78, 216, 0.12);
+  border-color: transparent;
+  transform: translateY(-1px);
 }
 
 .primary:active:not(:disabled),
@@ -747,6 +883,20 @@ legend {
   align-items: flex-start;
 }
 
+/* Sağ üstteki durum etiketi tek satırda kalsın, sol başlık daralsın. */
+.transaction-top > div,
+.history-top > div {
+  min-width: 0;
+}
+
+.transaction-top > .status,
+.transaction-top > .pill,
+.history-top > .status,
+.history-top > .pill {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .scroll-list {
   max-height: 340px;
   overflow-y: auto;
@@ -762,8 +912,13 @@ legend {
 
 .customer-toolbar {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.customer-toolbar label > span {
+  font-size: 0.82rem;
+  color: var(--muted);
 }
 
 .customer-search-field {
@@ -786,21 +941,71 @@ legend {
   background: transparent;
 }
 
+/* Segment kontrolü: tek zemin üstünde sekmeler, aktif olan beyaz yükselir. */
 .history-filter-tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  display: inline-flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--tile);
 }
 
+.history-filter-tabs .ghost {
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.history-filter-tabs .ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text);
+  transform: none;
+}
+
+/* Ayarlar: her bölüm ayrı yumuşak kutu, geniş ekranda 2 sütun. */
 .tools-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
   padding: 0;
+}
+
+.tools-panel > .device-isolation-notice {
+  grid-column: 1 / -1;
 }
 
 .tool-block {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding-top: 12px;
+  padding: 18px;
+  border-radius: 16px;
+  background: var(--tile);
+}
+
+.tool-block p {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.tool-block .ghost {
+  background: var(--panel);
+}
+
+.tool-block .ghost:hover:not(:disabled) {
+  background: var(--panel);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 760px) {
+  .tools-panel {
+    grid-template-columns: 1fr;
+  }
 }
 
 .tool-block h3 {
@@ -868,11 +1073,33 @@ legend {
 
 .quick-customer-picker input {
   flex: 1;
+  min-width: 0;
+  cursor: pointer;
 }
 
 .quick-customer-open-button {
+  flex-shrink: 0;
   white-space: nowrap;
   min-height: 48px;
+  padding: 0 14px;
+}
+
+/* Müşteri alanı esnek, tarih sabit: seçici sıkışmasın. Kart darsa
+   (ör. 1024px ekranda iki sütun yan yana) müşteri ve tarih alt alta geçer. */
+.quick-entry-card {
+  container-type: inline-size;
+}
+
+@container (min-width: 460px) {
+  #quick-transaction-form > .two-col:first-child {
+    grid-template-columns: minmax(0, 1fr) 168px;
+  }
+}
+
+@container (max-width: 459px) {
+  #quick-transaction-form > .two-col:first-child {
+    grid-template-columns: 1fr;
+  }
 }
 
 #customer-picker-dialog {
@@ -1002,10 +1229,10 @@ legend {
 }
 
 .history-filter-tabs .ghost.active {
-  background: linear-gradient(135deg, #1D4ED8, #1E40AF);
-  color: #fff;
+  background: var(--panel);
+  color: var(--accent-dark);
   border-color: transparent;
-  box-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);
+  box-shadow: 0 1px 2px rgba(30, 27, 75, 0.08), 0 2px 8px rgba(29, 78, 216, 0.1);
 }
 
 .compact-summary-card {
@@ -1013,7 +1240,7 @@ legend {
 }
 
 .compact-stats {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .command-center-card {
@@ -1033,23 +1260,23 @@ legend {
 }
 
 .command-list-card {
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  padding: 16px;
-  background: rgba(29, 78, 216, 0.05);
+  padding: 20px;
 }
 
+/* Kontrol istatistikleri sayfa zemininde duruyor → beyaz kart. Durum tonu
+   çerçeveyle değil sadece değerin rengiyle verilir. */
 .command-stat {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(240, 242, 255, 0.9));
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
 }
 
-.stat-card--overdue {
-  border-color: rgba(244, 63, 94, 0.35);
-  background: linear-gradient(180deg, rgba(244, 63, 94, 0.05), rgba(240, 242, 255, 0.9));
-}
-
-.stat-card--warning {
-  border-color: rgba(245, 158, 11, 0.25);
+.command-stat .amount {
+  margin-top: 6px;
+  font-size: 1.6rem;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-value--overdue {
@@ -1065,10 +1292,10 @@ legend {
 }
 
 .watch-item {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--panel-strong);
-  padding: 14px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--tile);
+  padding: 16px;
 }
 
 .watch-item strong {
@@ -1085,13 +1312,12 @@ legend {
 }
 
 .watch-item.overdue {
-  border-color: rgba(244, 63, 94, 0.3);
-  box-shadow: inset 0 0 0 1px rgba(244, 63, 94, 0.08);
+  background: oklch(97% 0.018 15);
 }
 
-.watch-item.warning {
-  border-color: rgba(245, 158, 11, 0.28);
-  box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.06);
+.watch-item .meta-row {
+  font-size: 0.88rem;
+  gap: 6px 14px;
 }
 
 .action-row {
@@ -1115,7 +1341,7 @@ legend {
 }
 
 .product-picker {
-  background: rgba(29, 78, 216, 0.03);
+  background: var(--tile);
 }
 
 .product-row-list {
@@ -1154,8 +1380,10 @@ legend {
   cursor: pointer;
   list-style: none;
   display: flex;
-  align-items: center;
-  gap: 7px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 7px;
+  min-height: 44px;
   font-weight: 700;
   color: var(--accent);
   padding: 6px 0;
@@ -1176,6 +1404,11 @@ legend {
   transform: rotate(90deg);
 }
 
+.quick-advanced-options summary .muted {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
 .quick-advanced-options > .stack {
   padding-top: 12px;
 }
@@ -1189,7 +1422,9 @@ legend {
 .nested-card {
   padding: 18px;
   border-radius: 20px;
-  background: rgba(29, 78, 216, 0.04);
+  border: 0;
+  box-shadow: none;
+  background: var(--tile);
 }
 
 .catalog-list-wrap {
@@ -1208,8 +1443,8 @@ legend {
   gap: 12px;
   padding: 16px;
   border-radius: 18px;
-  border: 1px solid var(--line);
-  background: rgba(29, 78, 216, 0.04);
+  border: 0;
+  background: var(--tile);
 }
 
 .catalog-product-list {
@@ -1225,8 +1460,8 @@ legend {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 14px;
-  background: rgba(29, 78, 216, 0.04);
-  border: 1px solid rgba(29, 78, 216, 0.14);
+  background: var(--panel);
+  border: 0;
 }
 
 .product-row label {
@@ -1258,9 +1493,18 @@ legend {
   place-items: center;
   text-align: center;
   color: var(--muted);
-  border: 1px dashed rgba(29, 78, 216, 0.2);
-  border-radius: 18px;
+  background: var(--tile);
+  border-radius: 16px;
   padding: 24px 20px;
+}
+
+/* makeEmptyState() kendi .empty-state kutusunu, zaten .empty-state olan
+   listenin içine basıyor → içteki ikinci çerçeve/zemin kapatılır. */
+.empty-state .empty-state {
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border-radius: 0;
 }
 
 .empty-icon {
@@ -1438,6 +1682,28 @@ dialog[open] {
   background: #ffffff;
 }
 
+#confirm-dialog {
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  width: min(420px, calc(100vw - 32px));
+  padding: 0;
+  background: #ffffff;
+  box-shadow: 0 24px 64px rgba(30, 27, 75, 0.25);
+}
+
+.confirm-dialog-form {
+  gap: 10px;
+}
+
+.confirm-dialog-message {
+  margin: 0 0 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: break-word;
+}
+
+#confirm-dialog::backdrop,
 #transaction-dialog::backdrop,
 #collection-dialog::backdrop,
 #catalog-dialog::backdrop,
@@ -1638,10 +1904,11 @@ dialog[open] {
   z-index: 600;
   transform: translateY(-100%);
   transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.86);
+  border-bottom: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
 }
 
 .topbar.open {
@@ -1652,6 +1919,7 @@ dialog[open] {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
   padding: 13px 20px;
   padding-top: calc(13px + env(safe-area-inset-top, 0px));
 }
@@ -1718,10 +1986,11 @@ dialog[open] {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 2px;
-  background: rgba(255, 255, 255, 0.97);
-  border-top: 1px solid var(--line);
-  box-shadow: 0 -4px 20px rgba(29, 78, 216, 0.08);
-  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.9);
+  border-top: 1px solid var(--line-soft);
+  box-shadow: 0 -6px 24px rgba(29, 78, 216, 0.08);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
   padding: 6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
 }
 
@@ -1765,7 +2034,8 @@ dialog[open] {
 }
 
 .bottom-nav-item.active {
-  color: #2563EB;
+  color: var(--accent);
+  background: rgba(29, 78, 216, 0.08);
 }
 
 .bottom-nav-item.active .bottom-nav-label {
@@ -1773,7 +2043,6 @@ dialog[open] {
 }
 
 .bottom-nav-item.active .bottom-nav-icon {
-  filter: drop-shadow(0 0 6px rgba(29, 78, 216, 0.6));
   animation: nav-pop 0.22s var(--ease-out-quint);
 }
 
@@ -1789,7 +2058,6 @@ dialog[open] {
 }
 
 .ozet-table-wrap {
-  border: 1px solid var(--line);
   border-radius: 14px;
   overflow: auto;
   max-height: 68vh;
@@ -1812,7 +2080,7 @@ dialog[open] {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: var(--panel-strong);
+  background: var(--tile);
   font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
@@ -1820,12 +2088,24 @@ dialog[open] {
   color: var(--muted);
 }
 
-.ozet-table tbody tr {
-  border-top: 1px solid var(--line);
+.ozet-table thead th:first-child {
+  border-radius: 12px 0 0 12px;
 }
 
-.ozet-table tbody tr:nth-child(even) {
-  background: rgba(29, 78, 216, 0.04);
+.ozet-table thead th:last-child {
+  border-radius: 0 12px 12px 0;
+}
+
+.ozet-table tbody tr + tr {
+  border-top: 1px solid var(--line-soft);
+}
+
+.ozet-table tbody tr {
+  transition: background 0.15s;
+}
+
+.ozet-table tbody tr:hover {
+  background: var(--tile);
 }
 
 .ozet-col-name { width: 38%; }
@@ -1850,19 +2130,21 @@ dialog[open] {
   font-weight: 700;
   color: var(--accent-light);
   text-transform: uppercase;
-  text-decoration: underline;
+  text-decoration: none;
   text-underline-offset: 3px;
   cursor: pointer;
   text-align: left;
   white-space: normal;
   overflow-wrap: anywhere;
   width: 100%;
+  min-height: 0;
+  box-shadow: none;
 }
 
 .ozet-name-link:hover,
 .ozet-name-link:focus-visible {
-  color: #2563EB;
-  text-decoration-thickness: 2px;
+  color: var(--accent-dark);
+  text-decoration: underline;
 }
 
 .ozet-table td.ozet-col-num {
@@ -1871,13 +2153,27 @@ dialog[open] {
   white-space: nowrap;
 }
 
-.ozet-islem-button {
-  padding: 6px 6px;
-  font-size: 0.78rem;
+/* Her satırda dolu mavi buton tabloyu bağırtıyordu → sakin yumuşak buton. */
+.ozet-islem-button,
+.ozet-islem-button.primary {
+  padding: 6px 8px;
+  min-height: 40px;
+  font-size: 0.8rem;
   line-height: 1.1;
   white-space: normal;
   text-align: center;
   width: 100%;
+  border-radius: 10px;
+  background: rgba(29, 78, 216, 0.08);
+  color: var(--accent-dark);
+  box-shadow: none;
+}
+
+.ozet-islem-button.primary:hover:not(:disabled) {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: none;
+  transform: none;
 }
 
 .ozet-empty {
@@ -1902,6 +2198,7 @@ dialog[open] {
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
+    overflow-x: clip;
   }
 
   .hero,
@@ -1928,12 +2225,6 @@ dialog[open] {
     width: 100%;
     max-width: 100%;
     min-width: 0;
-  }
-
-  .hero-stats,
-  .overview-grid,
-  .ledger-grid {
-    grid-template-columns: 1fr;
   }
 
   .stat-card,
@@ -2005,17 +2296,8 @@ dialog[open] {
     max-height: 260px;
   }
 
-  .quick-customer-picker {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .quick-customer-open-button {
-    width: 100%;
-  }
-
   .customer-list-card .customer-list {
-    max-height: 300px;
+    max-height: min(56vh, 460px);
   }
 }
 
@@ -2030,18 +2312,112 @@ dialog[open] {
     padding: 14px 14px 104px;
   }
 
-  .hero,
   .card,
-  .customer-operation-slide,
-  .ledger-detail-slide {
-    border-radius: 16px;
+  .quick-entry-card,
+  .daily-board-card,
+  .customer-operation-slide {
+    border-radius: 18px;
+    padding: 18px 16px;
   }
 
-  .hero,
-  .card,
-  .customer-operation-slide,
   .ledger-detail-slide {
-    padding: 16px;
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .hero {
+    gap: 14px;
+  }
+
+  /* ── Telefon: tek elle kullanım ── */
+
+  /* Uzun hızlı-işlem formunda kaydet butonu alt menünün hemen üstünde
+     yapışık kalır; kaydırmadan her an basılabilir. */
+  #quick-transaction-form > button[type="submit"] {
+    position: sticky;
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    z-index: 5;
+    min-height: 52px;
+    font-size: 1rem;
+  }
+
+  .history-filter-tabs {
+    display: flex;
+    width: 100%;
+  }
+
+  .history-filter-tabs .ghost {
+    flex: 1;
+    min-height: 40px;
+    padding: 8px 6px;
+  }
+
+  .hero-stats,
+  .overview-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  /* Rakam karoları dar ekranda etiket solda, değer sağda satırlara dönüşür:
+     daha az dikey alan, para tutarları taşmaz. */
+  .ledger-grid,
+  #control-center-stats {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .ledger-grid .overview-card,
+  #control-center-stats .command-stat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+  }
+
+  .ledger-grid .overview-card .amount,
+  #control-center-stats .command-stat .amount {
+    margin: 0;
+    max-width: 65%;
+    font-size: 1.05rem;
+    text-align: right;
+  }
+
+  .ledger-grid .overview-card .muted,
+  #control-center-stats .command-stat .muted {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .period-card {
+    gap: 8px;
+    padding: 14px 16px;
+  }
+
+  /* Müşteri detayındaki Gün/Haftalık/Yıl kartları alt alta tüm ekranı
+     kaplıyordu → yana kaydırılan şerit; sonraki kartın ucu görünür. */
+  #detail-overview {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 0 16px;
+    scroll-padding: 0 16px;
+  }
+
+  #detail-overview::-webkit-scrollbar {
+    display: none;
+  }
+
+  #detail-overview > .period-card {
+    flex: 0 0 78%;
+    scroll-snap-align: start;
+  }
+
+  .command-list-card {
+    padding: 18px 16px;
   }
 
   .operations-intro h2 {
@@ -2091,10 +2467,6 @@ dialog[open] {
   #detail-name {
     font-size: 1.15rem;
     line-height: 1.25;
-  }
-
-  .customer-toolbar {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .quick-collect-grid {
@@ -2366,14 +2738,21 @@ dialog[open] {
   }
 }
 
-/* ── Geniş ekranlarda (app-shell 1180px'de sabitlenince açığa çıkan
-   yan boşluklar) atmosferik arka plan görseli — mobil/tabletin dar
-   genişliklerinde gutter zaten yok, o yüzden burada devreye girer. ── */
-@media (min-width: 1240px) {
-  body {
-    background-image: url('assets/hero-bg.jpg');
-    background-size: cover;
-    background-position: center top;
-    background-attachment: fixed;
+/* ── Masaüstü: alt menü tam genişlik şerit yerine ortada yüzen bir dock ── */
+@media (min-width: 981px) {
+  .bottom-nav {
+    left: 50%;
+    right: auto;
+    bottom: 16px;
+    transform: translateX(-50%);
+    width: min(560px, calc(100% - 32px));
+    padding: 6px;
+    border: 1px solid var(--line-soft);
+    border-radius: 20px;
+    box-shadow: 0 2px 6px rgba(30, 27, 75, 0.06), 0 14px 36px rgba(29, 78, 216, 0.16);
+  }
+
+  .bottom-nav-item:hover:not(.active) {
+    background: rgba(29, 78, 216, 0.06);
   }
 }

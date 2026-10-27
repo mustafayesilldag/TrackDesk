@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styless.css?v=12">
+  <link rel="stylesheet" href="styless.css?v=24">
 </head>
 <body>
   <div id="auth-overlay" class="auth-overlay" hidden>
@@ -63,23 +63,23 @@
       <div class="view view-operasyon active" data-view="operasyon">
       <section class="hero operations-hero">
         <div class="operations-intro">
-          <p class="eyebrow">Günlük Operasyon</p>
-          <h2>Anlık Sipariş ve Teslimat Merkezi</h2>
+          <p class="eyebrow">Günlük Panel</p>
+          <h2>Hızlı Kayıt ve Günlük Takip</h2>
         </div>
         <div class="operations-grid">
           <section class="stat-card quick-entry-card">
             <div class="section-head">
               <div>
                 <p class="eyebrow">Hızlı Ekle</p>
-                <h2>Yeni Günlük İşlem</h2>
+                <h2>Yeni İşlem</h2>
               </div>
             </div>
-            <form id="quick-transaction-form" class="stack">
+            <form id="quick-transaction-form" class="stack" novalidate>
               <div class="two-col">
                 <label>
                   <span>Müşteri</span>
                   <div class="quick-customer-picker">
-                    <input id="quick-customer" type="text" placeholder="Müşteri seçmek için dokun" autocomplete="off" readonly required>
+                    <input id="quick-customer" type="text" placeholder="Müşteri seç" autocomplete="off" readonly required>
                     <input id="quick-customer-id" type="hidden">
                     <button type="button" id="open-customer-picker" class="ghost quick-customer-open-button">Listeden Seç</button>
                   </div>
@@ -173,9 +173,9 @@
             </div>
             <div class="customer-toolbar">
               <label>
-                <span>Baş harf seç</span>
+                <span>Baş harf</span>
                 <select id="letter-filter">
-                  <option value="">Tüm Harfler</option>
+                  <option value="">Tümü</option>
                   <option value="A">A</option>
                   <option value="B">B</option>
                   <option value="C">C</option>
@@ -203,7 +203,7 @@
               </label>
               <label class="customer-search-field">
                 <span>Müşteri ara</span>
-                <input id="search-input" type="search" placeholder="Isim yazarak ara">
+                <input id="search-input" type="search" placeholder="İsim yazarak ara">
               </label>
             </div>
             <div id="customer-list" class="customer-list"></div>
@@ -244,11 +244,11 @@
                 <div class="section-head">
                   <div>
                     <p class="eyebrow">Planlı</p>
-                    <h2>Gelecek Siparişler</h2>
+                    <h2>Gelecek İşlemler</h2>
                   </div>
                 </div>
                 <div id="future-transaction-list" class="transaction-list empty-state">
-                  İleri tarihli siparişler burada görünecek.
+                  İleri tarihli işlemler burada görünecek.
                 </div>
               </article>
 
@@ -268,7 +268,7 @@
                 <div class="section-head">
                   <div>
                     <p class="eyebrow">Müşteri Geçmişi</p>
-                    <h2>Önceki Gunler</h2>
+                    <h2>Önceki Günler</h2>
                   </div>
                 </div>
                 <div id="customer-history" class="history-list empty-state">
@@ -294,7 +294,7 @@
                     <p class="section-hint">Önceki dönemden devredilen açık bakiye. Tahsilat yapıldığında kapanır.</p>
                   </div>
                   <div id="customer-rollovers" class="history-list scroll-list empty-state">
-                    Devreden bakiye kayıtlari burada görünecek.
+                    Devreden bakiye kayıtları burada görünecek.
                   </div>
                 </article>
 
@@ -326,6 +326,13 @@
 
       <div class="view view-ozet" data-view="ozet">
         <div class="card ozet-card">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Genel Özet</p>
+              <h2>Kimde Ne Kadar Açık Var?</h2>
+              <p class="section-hint">İsme dokun: cari döküm. "İşlem Yap": tahsilat ve diğer işlemler.</p>
+            </div>
+          </div>
           <label class="customer-search-field ozet-search-field">
             <input id="ozet-search" type="search" placeholder="Müşteri ara..." aria-label="Müşteri ara" autocomplete="off">
           </label>
@@ -334,8 +341,8 @@
               <thead>
                 <tr>
                   <th class="ozet-col-name">Müşteri</th>
-                  <th class="ozet-col-num">Aylık</th>
-                  <th class="ozet-col-num">Yıllık</th>
+                  <th class="ozet-col-num">Bu Ay</th>
+                  <th class="ozet-col-num">Toplam</th>
                   <th class="ozet-col-action">İşlem</th>
                 </tr>
               </thead>
@@ -370,7 +377,7 @@
                 <h3>Geciken ve Acil Takip</h3>
               </div>
               <div id="urgent-watch-list" class="history-list scroll-list empty-state">
-                Açık takip kayıtlari burada görünecek.
+                Açık takip kayıtları burada görünecek.
               </div>
             </section>
           </div>
@@ -392,16 +399,16 @@
           <div class="section-head compact">
             <div>
               <p class="eyebrow">Genel Geçmiş</p>
-              <h3>Tüm İşlem Geçmişi</h3>
+              <h3>Tamamlanan İşlemler</h3>
             </div>
             <div class="history-filter-tabs">
               <button type="button" class="ghost active" data-history-filter="today">Bugün</button>
-              <button type="button" class="ghost" data-history-filter="week">Haftalik</button>
+              <button type="button" class="ghost" data-history-filter="week">Haftalık</button>
               <button type="button" class="ghost" data-history-filter="year">Yıllık</button>
             </div>
           </div>
           <div id="global-history" class="history-list scroll-list empty-state">
-            Geçmiş günlere ait işlemler burada listelenecek.
+            Ödemesi tamamlanan işlemler burada listelenecek.
           </div>
         </section>
       </div>
@@ -490,9 +497,9 @@
           <input id="transaction-paid" name="paid" type="number" min="0" step="0.01" placeholder="0" value="0">
         </label>
         <label>
-          <span>Durum asamasi</span>
+          <span>Durum aşaması</span>
           <select id="transaction-stage" name="stage">
-            <option value="created">İşlem alindi</option>
+            <option value="created">İşlem alındı</option>
             <option value="editing">Düzenleniyor</option>
             <option value="delivered">Teslim edildi</option>
           </select>
@@ -521,9 +528,9 @@
       <div class="date-chip" id="collection-summary-chip"></div>
 
       <div class="quick-collect-grid">
-        <button type="button" class="ghost quick-collect-button" data-ratio="0.25">Ceyregi Al</button>
-        <button type="button" class="ghost quick-collect-button" data-ratio="0.5">Yarisini Al</button>
-        <button type="button" class="ghost quick-collect-button" data-ratio="1">Tamamini Al</button>
+        <button type="button" class="ghost quick-collect-button" data-ratio="0.25">Çeyreğini Al</button>
+        <button type="button" class="ghost quick-collect-button" data-ratio="0.5">Yarısını Al</button>
+        <button type="button" class="ghost quick-collect-button" data-ratio="1">Tamamını Al</button>
       </div>
 
       <label>
@@ -533,7 +540,7 @@
 
       <label>
         <span>Tahsilat notu</span>
-        <input id="collection-note" name="collectionNote" type="text" placeholder="Örnek: Yarisi alindi">
+        <input id="collection-note" name="collectionNote" type="text" placeholder="Örnek: Yarısı alındı">
       </label>
 
       <div class="dialog-actions stacked">
@@ -560,10 +567,10 @@
           </div>
           <form id="brand-form" class="stack">
             <label>
-              <span>Marka adi</span>
+              <span>Marka adı</span>
               <input id="brand-name" type="text" placeholder="Örnek: Yeni Marka">
             </label>
-            <button type="submit" class="primary">Markayi Kaydet</button>
+            <button type="submit" class="primary">Markayı Kaydet</button>
           </form>
         </section>
 
@@ -577,7 +584,7 @@
               <select id="product-brand-select"></select>
             </label>
             <label>
-              <span>Ürün adi</span>
+              <span>Ürün adı</span>
               <input id="product-name" type="text" placeholder="Örnek: 0.33 lt 12 li koli">
             </label>
             <button type="submit" class="primary">Ürünu Kaydet</button>
@@ -610,7 +617,7 @@
           <span><strong>Her cihaz kendi verisini tutar.</strong> Bulut senkronizasyonu yok — iki saha çalışanı aynı anda farklı cihazda farklı veri görür. Paylaşmak için JSON Yedek al ve diğer cihaza aktar.</span>
         </div>
         <div class="tool-block">
-          <h3>Veri Yedegi</h3>
+          <h3>Veri Yedeği</h3>
           <p class="muted">Cihaza indirerek yedek al, gerekirse geri yükle. Bulut yoksa en kritik güvence bu olur.</p>
           <button type="button" id="export-backup-button" class="ghost">JSON Yedek İndir</button>
           <button type="button" id="import-backup-button" class="ghost">Yedeği Geri Yükle</button>
@@ -619,7 +626,7 @@
         <div class="tool-block">
           <h3>Ürün Yönetimi</h3>
           <p class="muted">Yeni marka ve ürünleri panel içinden ekle, gerekiyorsa kaldır.</p>
-          <button type="button" id="open-catalog-dialog" class="ghost">Kataloğu Yonet</button>
+          <button type="button" id="open-catalog-dialog" class="ghost">Kataloğu Yönet</button>
         </div>
         <div class="tool-block">
           <h3>Bildirimler</h3>
@@ -660,7 +667,7 @@
         <input id="report-cutoff-date" type="date">
       </label>
       <button id="open-rollover-dialog" class="ghost action-menu-button" disabled>
-        <span class="action-menu-kicker">DEVIR</span>
+        <span class="action-menu-kicker">DEVİR</span>
         <strong>Devir Ekle</strong>
       </button>
       <button id="print-customer-report" class="ghost action-menu-button" disabled>
@@ -672,7 +679,7 @@
         <strong>HTML Olarak İndir</strong>
       </button>
       <button id="delete-customer-button" class="danger action-menu-button" disabled>
-        <span class="action-menu-kicker">SIL</span>
+        <span class="action-menu-kicker">SİL</span>
         <strong>Müşteriyi Sil</strong>
       </button>
     </div>
@@ -690,7 +697,7 @@
 
       <label>
         <span>Müşteri ara</span>
-        <input id="customer-picker-search" type="text" placeholder="Isim yazarak ara" autocomplete="off">
+        <input id="customer-picker-search" type="text" placeholder="İsim yazarak ara" autocomplete="off">
       </label>
 
       <div id="customer-picker-results" class="customer-picker-results"></div>
@@ -708,7 +715,7 @@
       </div>
 
       <label>
-        <span>Müşteri adi</span>
+        <span>Müşteri adı</span>
         <input id="customer-add-name" name="name" type="text" placeholder="Örnek: Kodes" required>
       </label>
       <label>
@@ -720,7 +727,7 @@
         <input id="customer-add-phone" name="phone" type="text" inputmode="tel" placeholder="Örnek: 05xx xxx xx xx">
       </label>
       <label>
-        <span>Vergi numarasi</span>
+        <span>Vergi numarası</span>
         <input id="customer-add-tax-number" name="taxNumber" type="text" inputmode="numeric" placeholder="Örnek: 1234567890">
       </label>
       <label>
@@ -756,7 +763,7 @@
       </label>
 
       <label>
-        <span>Müşteri adi</span>
+        <span>Müşteri adı</span>
         <input id="customer-editor-name" name="name" type="text" placeholder="Örnek: Kodes">
       </label>
       <label>
@@ -768,7 +775,7 @@
         <input id="customer-editor-phone" name="phone" type="text" inputmode="tel" placeholder="Örnek: 05xx xxx xx xx">
       </label>
       <label>
-        <span>Vergi numarasi</span>
+        <span>Vergi numarası</span>
         <input id="customer-editor-tax-number" name="taxNumber" type="text" inputmode="numeric" placeholder="Örnek: 1234567890">
       </label>
       <label>
@@ -854,7 +861,7 @@
 
       <label>
         <span>Tahsilat notu</span>
-        <input id="rollover-collection-note" name="note" type="text" placeholder="Örnek: 1. parcasi alindi">
+        <input id="rollover-collection-note" name="note" type="text" placeholder="Örnek: 1. parçası alındı">
       </label>
 
       <button type="submit" class="primary">Tahsilatı Kaydet</button>
@@ -902,8 +909,19 @@
 
   <div id="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
 
-  <script src="seed-data.js?v=1"></script>
-  <script src="panel.js?v=13"></script>
+  <dialog id="confirm-dialog" aria-labelledby="confirm-dialog-message">
+    <div class="dialog-form confirm-dialog-form">
+      <p class="eyebrow">Onay gerekiyor</p>
+      <p id="confirm-dialog-message" class="confirm-dialog-message"></p>
+      <div class="dialog-actions">
+        <button type="button" id="confirm-dialog-cancel" class="ghost">Vazgeç</button>
+        <button type="button" id="confirm-dialog-accept" class="danger">Evet, sil</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="seed-data.js?v=2"></script>
+  <script src="panel.js?v=27"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function () {
